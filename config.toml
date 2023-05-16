@@ -1,0 +1,9 @@
+baseURL = 'https://ivanjedovnicki.github.io/'
+languageCode = 'en-us'
+theme = 'hugo-coder'
+
+[params]
+author = 'Ivan Jedovnicki'
+title = 'Python Deep Dives'
+description = 'Blogs mostly about Python and other intetersting topics I come across'
+colorScheme = 'auto'
