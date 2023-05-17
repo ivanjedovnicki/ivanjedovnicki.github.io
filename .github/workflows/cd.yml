@@ -10,6 +10,8 @@ on:
 
 jobs:
   build-and-deploy-site:
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -34,8 +36,6 @@ jobs:
         continue-on-error: true
 
       - name: Deploy to GitHub Pages
-        permissions:
-          contents: write
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: peaceiris/actions-gh-pages@v3
         with:
