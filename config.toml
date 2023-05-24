@@ -1,9 +1,64 @@
-baseURL = 'https://ivanjedovnicki.github.io/'
-languageCode = 'en-us'
-theme = 'hugo-coder'
+baseURL = "https://ivanjedovnicki.github.io/"
+title = "ivan jedovnicki"
+theme = "hugo-coder"
+languageCode = "en"
+defaultContentLanguage = "en"
+paginate = 20
+enableEmoji = true
+# Enable Disqus comments
+# disqusShortname = "yourdiscussshortname"
+
+[markup.highlight]
+style = "github-dark"
 
 [params]
-author = 'Ivan Jedovnicki'
-title = 'Python Deep Dives'
-description = 'Blogs mostly about Python and other intetersting topics I come across'
-colorScheme = 'auto'
+author = "Ivan Jedovnicki"
+# license = '<a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA-4.0</a>'
+description = "Ivan Jedovnicki's personal website"
+keywords = "python, developer"
+info = ["Python Developer", "Physicist"]
+# avatarURL = "images/avatar.jpg"
+# gravatar = "john.doe@example.com"
+dateFormat = "January 2, 2006"
+since = 2023
+colorScheme = "auto"
+# Series see also post count
+maxSeeAlsoItems = 5
+
+[taxonomies]
+category = "categories"
+series = "series"
+tag = "tags"
+author = "authors"
+
+[[params.social]]
+name = "Github"
+icon = "fa fa-2x fa-github"
+weight = 1
+url = "https://github.com/ivanjedovnicki/"
+
+[[params.social]]
+name = "LinkedIn"
+icon = "fa fa-2x fa-linkedin"
+weight = 4
+url = "https://www.linkedin.com/in/ivan-jedovnicki-517656174"
+
+[[menu.main]]
+name = "About"
+weight = 1
+url = "about/"
+
+[[menu.main]]
+name = "Blog"
+weight = 2
+url = "blog/"
+
+# [[menu.main]]
+# name = "Projects"
+# weight = 3
+# url = "projects/"
+
+[[menu.main]]
+name = "Contact me"
+weight = 4
+url = "contact/"
