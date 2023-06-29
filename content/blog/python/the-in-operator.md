@@ -4,19 +4,10 @@ date: 2023-05-24T19:10:35+02:00
 draft: true
 ---
 
-* swappable collections
-* custom objects allowing for membership tests via the __contains__ special
-  method
-* custom objects and delegation
-* thinking about the `in` operator as an interface
-* `__iter__`
-* `__getitem__` legacy protocol
-* the `in` operator and generators
-
 # Introduction
 
-Testing whether an element is present in a collection is easy in Python using
-the `in` operator. It is almost as easy as asking a question.
+If you use the `in` operator in Python, testing whether an element is 
+present in a collection is almost as easy as asking a question.
 
 ```shell
 >>> 'one'  in ['one', 'two', 'three']
@@ -216,7 +207,7 @@ Let's see an example.
 >>> hm.put(KeyValue('two', 2))
 >>> hm
 <HashMap 14: <Bucket [<KeyValue(key=one, value=1)>]>, 19: <Bucket [<KeyValue(key=two, value=2)>]>>
->>> hm.put(KeyValue('three', 3))
+>>> hm.put(KeyValue('three', 3))  # hash collision
 >>> hm
 <HashMap 14: <Bucket [<KeyValue(key=one, value=1)>]>, 19: <Bucket [<KeyValue(key=two, value=2)>, <KeyValue(key=three, value=3)>]>>
 >>> naive_hash('one'), naive_hash('two'), naive_hash('three')
@@ -246,8 +237,128 @@ the `in` operator whenever possible.
 
 # What is a Collection
 
-* swappable collection - just changing braces?
-* what is a collection?
-* why does `1 in range(10)` work?
+Recalling our example from the introduction, you might believe that 
+affecting performance with regard to the `in` operator amounts to changing 
+braces; from square and round to curly. Actually, that's not far from the 
+truth. The question is, why does it work? And, maybe more importantly, how 
+can you define your own objects that support membership checking via the 
+`in` operator?
 
-# User Defined Collections and Protocols
+This works because lists, tuples, dictionaries, and sets are all instances 
+of `collections.abc.Collection` class. That is an abstract base class used 
+to define a protocol an instance of that class should implement. If you 
+check the documentation, you will see that `Collection` inherits from 
+`Sized`, `Iterable`, and `Container`. Inheriting from `Sized` means that you 
+can ask how many elements are there in the collection by implementing 
+`__len__`. Inheriting from `Iterable` means that the collection can be 
+iterated over using a for loop, by implementing `__iter__`. And finally, 
+inheriting from `Container` means that you can test for membership using the 
+`in` operator by implementing the `__contains__` special method. This is 
+what all collections have in common, and this is what makes Python easy to 
+use. Let's explore this through some code samples.
+
+```python
+class ContainerTest:
+    def __init__(self, x, y)
+        self.x = x
+        self.y = y
+
+    def __contains__(self, item):
+        return item in (self.x, self.y)
+```
+
+```shell
+>>> ct = ContainerTest(1, 2)
+>>> 1 in ct
+True
+>>> 2 in ct
+True
+>>> 3 in ct
+False
+```
+
+In the example above, Python will actually call the `__contains__` special 
+method like this.
+
+```python
+ct.__contains__(1)
+```
+
+That's fairly straightforward, but what is perhaps less known is that Python 
+will try to support the `in` operator event if `__contains__` is not 
+implemented. First, Python will try iterating over the collection if that 
+object supports iteration via `__iter__`. Lastly, it will try membership 
+testing using the legacy `__getitem__` protocol. Let's take a look at a few 
+code examples.
+
+```python
+class IterableTest:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    def __iter__(self):
+        yield from (self.x, self.y)
+```
+
+This class supports iteration, and that is enough for membership testing 
+using the `in` operator. That's the reason why the `in` operator works with 
+generators as well.
+
+```shell
+>>> it = IterableTest(1, 2)
+>>> 1 in ct
+True
+>>> 2 in ct
+True
+>>> 3 in ct
+False
+```
+
+Finally, if neither `__contains__` nor `__iter__` is available, Python will 
+try the legacy `__getitem__` protocol for membership testing (and iteration).
+
+```python
+class GetItemTest:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    def __getitem__(self, item):
+        if item == 0:
+            return self.x
+        elif item == 1:
+            return self.y
+        else:
+            raise IndexError
+```
+
+The `__getitem__` protocol is used to support the indexing operation, such 
+as you would apply on a list.
+
+```shell
+>>> l = [1, 2, 3]
+>>> l[0]  # l.__getitem__(0)
+1
+```
+
+Let's verify that `__getitem__` supports membership testing.
+
+```shell
+>>> gt = GetItemTest(1, 2)
+>>> 1 in ct
+True
+>>> 2 in ct
+True
+>>> 3 in ct
+False
+```
+
+# Conclusion
+
+We have seen that the `in` operator is compatible with many data structures. 
+Python will try to support that operator first by checking whether the 
+`__contains__` special method is implemented. If it is not, it will try 
+iterating through the collection by using `__iter__`, or `__getitem__` if 
+the former is not available. If elements of a collection are hashable, the 
+`in` operator will be most performant with sets and dictionaries.
