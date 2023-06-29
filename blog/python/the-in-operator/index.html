@@ -1,324 +1,284 @@
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-  <title>
-  The in Operator · ivan jedovnicki
-</title>
-  <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="color-scheme" content="light dark">
-
-
-
-
-<meta name="author" content="Ivan Jedovnicki">
-<meta name="description" content="swappable collections custom objects allowing for membership tests via the contains special method custom objects and delegation thinking about the in operator as an interface __iter__ __getitem__ legacy protocol  Introduction  Link to heading   Testing whether an element is present in a collection is easy in Python using the in operator. It is almost as easy as asking a question
-&gt;&gt;&gt; &#39;one&#39; in [&#39;one&#39;, &#39;two&#39;, &#39;three&#39;] True &gt;&gt;&gt; &#39;four&#39; in (&#39;one&#39;, &#39;two&#39;, &#39;three&#39;) False &gt;&gt;&gt; &#39;five&#39; in {&#39;one&#39;, &#39;two&#39;, &#39;three&#39;} False &gt;&gt;&gt; &#39;three&#39; in {&#39;one&#39;: 1, &#39;two&#39;: 2, &#39;three&#39;: 3} True From the examples above, we can see that the in operator works with various collection types: lists, tuples, sets, and dictionaries.">
-<meta name="keywords" content="python, developer">
-
-<meta name="twitter:card" content="summary"/>
-<meta name="twitter:title" content="The in Operator"/>
-<meta name="twitter:description" content="swappable collections custom objects allowing for membership tests via the contains special method custom objects and delegation thinking about the in operator as an interface __iter__ __getitem__ legacy protocol  Introduction  Link to heading   Testing whether an element is present in a collection is easy in Python using the in operator. It is almost as easy as asking a question
-&gt;&gt;&gt; &#39;one&#39; in [&#39;one&#39;, &#39;two&#39;, &#39;three&#39;] True &gt;&gt;&gt; &#39;four&#39; in (&#39;one&#39;, &#39;two&#39;, &#39;three&#39;) False &gt;&gt;&gt; &#39;five&#39; in {&#39;one&#39;, &#39;two&#39;, &#39;three&#39;} False &gt;&gt;&gt; &#39;three&#39; in {&#39;one&#39;: 1, &#39;two&#39;: 2, &#39;three&#39;: 3} True From the examples above, we can see that the in operator works with various collection types: lists, tuples, sets, and dictionaries."/>
-
-<meta property="og:title" content="The in Operator" />
-<meta property="og:description" content="swappable collections custom objects allowing for membership tests via the contains special method custom objects and delegation thinking about the in operator as an interface __iter__ __getitem__ legacy protocol  Introduction  Link to heading   Testing whether an element is present in a collection is easy in Python using the in operator. It is almost as easy as asking a question
-&gt;&gt;&gt; &#39;one&#39; in [&#39;one&#39;, &#39;two&#39;, &#39;three&#39;] True &gt;&gt;&gt; &#39;four&#39; in (&#39;one&#39;, &#39;two&#39;, &#39;three&#39;) False &gt;&gt;&gt; &#39;five&#39; in {&#39;one&#39;, &#39;two&#39;, &#39;three&#39;} False &gt;&gt;&gt; &#39;three&#39; in {&#39;one&#39;: 1, &#39;two&#39;: 2, &#39;three&#39;: 3} True From the examples above, we can see that the in operator works with various collection types: lists, tuples, sets, and dictionaries." />
-<meta property="og:type" content="article" />
-<meta property="og:url" content="https://ivanjedovnicki.github.io/blog/python/the-in-operator/" /><meta property="article:section" content="blog" />
-<meta property="article:published_time" content="2023-05-24T19:10:35+02:00" />
-<meta property="article:modified_time" content="2023-05-24T19:10:35+02:00" />
-
-
-
-
-
-<link rel="canonical" href="https://ivanjedovnicki.github.io/blog/python/the-in-operator/">
-
-
-<link rel="preload" href="/fonts/forkawesome-webfont.woff2?v=1.2.0" as="font" type="font/woff2" crossorigin>
-
-
-  
-  
-  <link rel="stylesheet" href="/css/coder.min.65236a6d834b26194eed04a2a3b45e44d9194ef9e620253705d4bef03bd7ef81.css" integrity="sha256-ZSNqbYNLJhlO7QSio7ReRNkZTvnmICU3BdS&#43;8DvX74E=" crossorigin="anonymous" media="screen" />
-
-
-
-
-
-
-  
-    
-    
-    <link rel="stylesheet" href="/css/coder-dark.min.f6534b0b446b75d9b6ad77a97d43ede2ddaeff1b6e2361fb7198d6f8fcb7f83f.css" integrity="sha256-9lNLC0Rrddm2rXepfUPt4t2u/xtuI2H7cZjW&#43;Py3&#43;D8=" crossorigin="anonymous" media="screen" />
-  
-
-
-
- 
-
-
-
-
-<link rel="icon" type="image/png" href="/images/favicon-32x32.png" sizes="32x32">
-<link rel="icon" type="image/png" href="/images/favicon-16x16.png" sizes="16x16">
-
-<link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
-<link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
-
-<link rel="manifest" href="/site.webmanifest">
-<link rel="mask-icon" href="/images/safari-pinned-tab.svg" color="#5bbad5">
-
-
-
-
-
-
-
-
-
-</head>
-
-
-
-
-
-
-<body class="preload-transitions colorscheme-auto">
-  
-<div class="float-container">
-    <a id="dark-mode-toggle" class="colorscheme-toggle">
-        <i class="fa fa-adjust fa-fw" aria-hidden="true"></i>
-    </a>
-</div>
-
-
-  <main class="wrapper">
-    <nav class="navigation">
-  <section class="container">
-    <a class="navigation-title" href="/">
-      ivan jedovnicki
-    </a>
-    
-      <input type="checkbox" id="menu-toggle" />
-      <label class="menu-button float-right" for="menu-toggle">
-        <i class="fa fa-bars fa-fw" aria-hidden="true"></i>
-      </label>
-      <ul class="navigation-list">
-        
-          
-            <li class="navigation-item">
-              <a class="navigation-link" href="/about/">About</a>
-            </li>
-          
-            <li class="navigation-item">
-              <a class="navigation-link" href="/blog/">Blog</a>
-            </li>
-          
-            <li class="navigation-item">
-              <a class="navigation-link" href="/contact/">Contact me</a>
-            </li>
-          
-        
-        
-      </ul>
-    
-  </section>
-</nav>
-
-
-    <div class="content">
-      
-  <section class="container page">
-  <article>
-    <header>
-      <h1 class="title">
-        <a class="title-link" href="https://ivanjedovnicki.github.io/blog/python/the-in-operator/">
-          The in Operator
-        </a>
-      </h1>
-    </header>
-
-    <ul>
-<li>swappable collections</li>
-<li>custom objects allowing for membership tests via the <strong>contains</strong> special
-method</li>
-<li>custom objects and delegation</li>
-<li>thinking about the <code>in</code> operator as an interface</li>
-<li><code>__iter__</code></li>
-<li><code>__getitem__</code> legacy protocol</li>
-</ul>
-<h1 id="introduction">
-  Introduction
-  <a class="heading-link" href="#introduction">
-    <i class="fa fa-link" aria-hidden="true" title="Link to heading"></i>
-    <span class="sr-only">Link to heading</span>
-  </a>
-</h1>
-<p>Testing whether an element is present in a collection is easy in Python using
-the <code>in</code> operator. It is almost as easy as asking a question</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">&gt;&gt;&gt; <span style="color:#e6db74">&#39;one&#39;</span>  in <span style="color:#f92672">[</span><span style="color:#e6db74">&#39;one&#39;</span>, <span style="color:#e6db74">&#39;two&#39;</span>, <span style="color:#e6db74">&#39;three&#39;</span><span style="color:#f92672">]</span>
-True
-&gt;&gt;&gt; <span style="color:#e6db74">&#39;four&#39;</span>  in <span style="color:#f92672">(</span><span style="color:#e6db74">&#39;one&#39;</span>, <span style="color:#e6db74">&#39;two&#39;</span>, <span style="color:#e6db74">&#39;three&#39;</span><span style="color:#f92672">)</span>
-False
-&gt;&gt;&gt; <span style="color:#e6db74">&#39;five&#39;</span> in <span style="color:#f92672">{</span><span style="color:#e6db74">&#39;one&#39;</span>, <span style="color:#e6db74">&#39;two&#39;</span>, <span style="color:#e6db74">&#39;three&#39;</span><span style="color:#f92672">}</span>
-False
-&gt;&gt;&gt; <span style="color:#e6db74">&#39;three&#39;</span> in <span style="color:#f92672">{</span><span style="color:#e6db74">&#39;one&#39;</span>: 1, <span style="color:#e6db74">&#39;two&#39;</span>: 2, <span style="color:#e6db74">&#39;three&#39;</span>: 3<span style="color:#f92672">}</span>
-True
-</code></pre></div><p>From the examples above, we can see that the <code>in</code> operator works with various
+<!doctype html><html lang=en><head><title>The in Operator · ivan jedovnicki</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=color-scheme content="light dark"><meta name=author content="Ivan Jedovnicki"><meta name=description content="Introduction Link to heading If you use the in operator in Python, testing whether an element is present in a collection is almost as easy as asking a question.
+>>> 'one' in ['one', 'two', 'three'] True >>> 'four' in ('one', 'two', 'three') False >>> 'five' in {'one', 'two', 'three'} False >>> 'three' in {'one': 1, 'two': 2, 'three': 3} True From the examples above, we can see that the in operator works with various collection types: lists, tuples, sets, and dictionaries."><meta name=keywords content="python,developer"><meta name=twitter:card content="summary"><meta name=twitter:title content="The in Operator"><meta name=twitter:description content="Introduction Link to heading If you use the in operator in Python, testing whether an element is present in a collection is almost as easy as asking a question.
+>>> 'one' in ['one', 'two', 'three'] True >>> 'four' in ('one', 'two', 'three') False >>> 'five' in {'one', 'two', 'three'} False >>> 'three' in {'one': 1, 'two': 2, 'three': 3} True From the examples above, we can see that the in operator works with various collection types: lists, tuples, sets, and dictionaries."><meta property="og:title" content="The in Operator"><meta property="og:description" content="Introduction Link to heading If you use the in operator in Python, testing whether an element is present in a collection is almost as easy as asking a question.
+>>> 'one' in ['one', 'two', 'three'] True >>> 'four' in ('one', 'two', 'three') False >>> 'five' in {'one', 'two', 'three'} False >>> 'three' in {'one': 1, 'two': 2, 'three': 3} True From the examples above, we can see that the in operator works with various collection types: lists, tuples, sets, and dictionaries."><meta property="og:type" content="article"><meta property="og:url" content="https://ivanjedovnicki.github.io/blog/python/the-in-operator/"><meta property="article:section" content="blog"><meta property="article:published_time" content="2023-05-24T19:10:35+02:00"><meta property="article:modified_time" content="2023-05-24T19:10:35+02:00"><link rel=canonical href=https://ivanjedovnicki.github.io/blog/python/the-in-operator/><link rel=preload href="/fonts/forkawesome-webfont.woff2?v=1.2.0" as=font type=font/woff2 crossorigin><link rel=stylesheet href=/css/coder.min.65236a6d834b26194eed04a2a3b45e44d9194ef9e620253705d4bef03bd7ef81.css integrity="sha256-ZSNqbYNLJhlO7QSio7ReRNkZTvnmICU3BdS+8DvX74E=" crossorigin=anonymous media=screen><link rel=stylesheet href=/css/coder-dark.min.f6534b0b446b75d9b6ad77a97d43ede2ddaeff1b6e2361fb7198d6f8fcb7f83f.css integrity="sha256-9lNLC0Rrddm2rXepfUPt4t2u/xtuI2H7cZjW+Py3+D8=" crossorigin=anonymous media=screen><link rel=icon type=image/png href=/images/favicon-32x32.png sizes=32x32><link rel=icon type=image/png href=/images/favicon-16x16.png sizes=16x16><link rel=apple-touch-icon href=/images/apple-touch-icon.png><link rel=apple-touch-icon sizes=180x180 href=/images/apple-touch-icon.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/images/safari-pinned-tab.svg color=#5bbad5></head><body class="preload-transitions colorscheme-auto"><div class=float-container><a id=dark-mode-toggle class=colorscheme-toggle><i class="fa fa-adjust fa-fw" aria-hidden=true></i></a></div><main class=wrapper><nav class=navigation><section class=container><a class=navigation-title href=/>ivan jedovnicki</a>
+<input type=checkbox id=menu-toggle>
+<label class="menu-button float-right" for=menu-toggle><i class="fa fa-bars fa-fw" aria-hidden=true></i></label><ul class=navigation-list><li class=navigation-item><a class=navigation-link href=/about/>About</a></li><li class=navigation-item><a class=navigation-link href=/blog/>Blog</a></li><li class=navigation-item><a class=navigation-link href=/contact/>Contact me</a></li></ul></section></nav><div class=content><section class="container page"><article><header><h1 class=title><a class=title-link href=https://ivanjedovnicki.github.io/blog/python/the-in-operator/>The in Operator</a></h1></header><h1 id=introduction>Introduction
+<a class=heading-link href=#introduction><i class="fa fa-link" aria-hidden=true title="Link to heading"></i>
+<span class=sr-only>Link to heading</span></a></h1><p>If you use the <code>in</code> operator in Python, testing whether an element is
+present in a collection is almost as easy as asking a question.</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-shell data-lang=shell><span style=display:flex><span>&gt;&gt;&gt; <span style=color:#e6db74>&#39;one&#39;</span>  in <span style=color:#f92672>[</span><span style=color:#e6db74>&#39;one&#39;</span>, <span style=color:#e6db74>&#39;two&#39;</span>, <span style=color:#e6db74>&#39;three&#39;</span><span style=color:#f92672>]</span>
+</span></span><span style=display:flex><span>True
+</span></span><span style=display:flex><span>&gt;&gt;&gt; <span style=color:#e6db74>&#39;four&#39;</span>  in <span style=color:#f92672>(</span><span style=color:#e6db74>&#39;one&#39;</span>, <span style=color:#e6db74>&#39;two&#39;</span>, <span style=color:#e6db74>&#39;three&#39;</span><span style=color:#f92672>)</span>
+</span></span><span style=display:flex><span>False
+</span></span><span style=display:flex><span>&gt;&gt;&gt; <span style=color:#e6db74>&#39;five&#39;</span> in <span style=color:#f92672>{</span><span style=color:#e6db74>&#39;one&#39;</span>, <span style=color:#e6db74>&#39;two&#39;</span>, <span style=color:#e6db74>&#39;three&#39;</span><span style=color:#f92672>}</span>
+</span></span><span style=display:flex><span>False
+</span></span><span style=display:flex><span>&gt;&gt;&gt; <span style=color:#e6db74>&#39;three&#39;</span> in <span style=color:#f92672>{</span><span style=color:#e6db74>&#39;one&#39;</span>: 1, <span style=color:#e6db74>&#39;two&#39;</span>: 2, <span style=color:#e6db74>&#39;three&#39;</span>: 3<span style=color:#f92672>}</span>
+</span></span><span style=display:flex><span>True
+</span></span></code></pre></div><p>From the examples above, we can see that the <code>in</code> operator works with various
 collection types: lists, tuples, sets, and dictionaries. What about performance?
 If you frequently had to test membership of items against a collection of
-million of elements, which data structure would you choose and why?</p>
-<h1 id="memory-footprint">
-  Memory Footprint
-  <a class="heading-link" href="#memory-footprint">
-    <i class="fa fa-link" aria-hidden="true" title="Link to heading"></i>
-    <span class="sr-only">Link to heading</span>
-  </a>
-</h1>
-<p>Let us examine the memory footprints of the data structures used above.</p>
-<p>To create and store elements in a list, Python has to allocate some memory for
+million elements, which data structure would you choose and why?</p><h1 id=memory-footprint-and-performance>Memory Footprint and Performance
+<a class=heading-link href=#memory-footprint-and-performance><i class="fa fa-link" aria-hidden=true title="Link to heading"></i>
+<span class=sr-only>Link to heading</span></a></h1><h2 id=lists-and-tuples>Lists and Tuples
+<a class=heading-link href=#lists-and-tuples><i class="fa fa-link" aria-hidden=true title="Link to heading"></i>
+<span class=sr-only>Link to heading</span></a></h2><p>To create and store elements in a list, Python has to allocate some memory for
 the list itself, and memory for the pointers to the elements it stores. To
 prevent memory allocation on each <code>list.append</code>, Python allocates some extra
 memory to keep appends fast (amortized <code>O(1)</code>). So while there may be a single
 element in a list, there is actually room for 4. Once those 4 places are
 occupied, Python will perform a reallocation making room for another 4. You can
-test this out for yourself by calling <code>list.__sizeof__()</code> after each append.</p>
-<p>Tuples on the other hand, have a fixed size. That means, there is no
+test this out for yourself by calling <code>list.__sizeof__()</code> after each append.</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span>l <span style=color:#f92672>=</span> []
+</span></span><span style=display:flex><span>print(l<span style=color:#f92672>.</span>__sizeof__())  <span style=color:#75715e># allocation for the list itself</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>for</span> i <span style=color:#f92672>in</span> range(<span style=color:#ae81ff>5</span>):
+</span></span><span style=display:flex><span>    l<span style=color:#f92672>.</span>append(i)  <span style=color:#75715e># only when the fifth item is appended will the list change size</span>
+</span></span><span style=display:flex><span>    print(len(l), l<span style=color:#f92672>.</span>__sizeof__())
+</span></span></code></pre></div><p>Tuples on the other hand, have a fixed size. That means, there is no
 reallocation and no other layers of indirection. The elements of tuples are
-stored directly in a struct making them very lean, memory wise.</p>
-<p>What about sets and dictionaries? Since the mechanism of storing data is the
-same for those two data structures, namely the hash map, let&rsquo;s take a look at
-how sets perform, memory-wise. Before we do that, here is a simplified look at
-how the hash map algorithm works. Let&rsquo;s say we allocated an array of 30 elements
-that will store pointers to our data. We want to have a way to retrieve a
-particular item without having to traverse the whole array. To insert an element
-<code>'spam'</code>, we need a hashing function that will give us the index offset (the
-index of the array where that element will be stored) of a given element. To
-retrieve an element, we use the hash function to calculate its hash value,
-which gives the index offset of that element in the array thus eliminating the
-need to traverse the whole array. Sometimes, it may happen that different
-elements give the same hash value, resulting in hash collisions. To prevent that
-from happening too frequently, Python keeps approximately one third of the
-underlying array unoccupied. Although this increases the memory footprint, it
-gives a huge performance gain, as the next section explains.</p>
-<p>So, the memory footprint of a tuple is smallest, next is the list, and last are
-sets and dictionaries due to their underlying hash map implementation. What
-about performance? The next section deals with that question.</p>
-<h1 id="performance">
-  Performance
-  <a class="heading-link" href="#performance">
-    <i class="fa fa-link" aria-hidden="true" title="Link to heading"></i>
-    <span class="sr-only">Link to heading</span>
-  </a>
-</h1>
-<p>Finding an element in a tuple or a list potentially requires traversing the
+stored directly in a struct making them very lean, memory wise.</p><p>Finding an element in a tuple or a list potentially requires traversing the
 whole collection and comparing each element in the collection against the
 object which membership you are testing. The following code snippet illustrates
-that:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">find_item</span>(target, collection):
-    <span style="color:#66d9ef">for</span> item <span style="color:#f92672">in</span> collection:
-        <span style="color:#66d9ef">if</span> target <span style="color:#f92672">==</span> item:
-            <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">True</span>
-    <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">False</span>
-</code></pre></div><p>If the <code>target</code> object is not present in the collection, the whole collection
+that:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span><span style=color:#66d9ef>def</span> <span style=color:#a6e22e>contains</span>(collection, target):
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>for</span> item <span style=color:#f92672>in</span> collection:
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>if</span> target <span style=color:#f92672>==</span> item:
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>True</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>False</span>
+</span></span></code></pre></div><p>If the <code>target</code> object is not present in the collection, the whole collection
 will be traversed before <code>False</code> is returned. The complexity of such an
 operation is <code>O(n)</code>. For a list twice as long, membership testing will take
-twice as long. If membership checking happens often on large lists or tuples,
+twice as long. If membership testing happens often on large lists or tuples,
 Python will spend quite some time traversing those lists and tuples, over and
-over again.</p>
-<p>For structures based on hash maps, the situation is quite different. To find
-whether the object <code>target</code> is in a collection, we first calculate its hash
-value. From that we can derive the offset index and directly access the element
-of interest from the underlying array. This operation does not depend on the
-collection size, i.e. it is <code>O(1)</code>. In other words, membership checking is fast
-for sets and dictionary keys, and does not depend on the collection size.</p>
-<p>Although sets and dictionaries have a memory overhead, they are data structures
+over again.</p><h2 id=sets-and-dictionaries>Sets and Dictionaries
+<a class=heading-link href=#sets-and-dictionaries><i class="fa fa-link" aria-hidden=true title="Link to heading"></i>
+<span class=sr-only>Link to heading</span></a></h2><p>What about sets and dictionaries? To understand those data structures, we
+first need to understand the basics of hash maps.</p><h3 id=custom-hash-map>Custom Hash Map
+<a class=heading-link href=#custom-hash-map><i class="fa fa-link" aria-hidden=true title="Link to heading"></i>
+<span class=sr-only>Link to heading</span></a></h3><p>Not being satisfied with having to traverse the whole collection to find the
+element of interest, we wonder is there a way we could simply find the index
+of the element we are looking for. So, if we have a list <code>l = ['one', 'two', 'three']</code>, and we want to know whether <code>'two'</code> is in our list, we need a
+function that will map the element <code>'two'</code> to an index of 1 because <code>l[1] == 'two'</code>. The hash function does precisely that. Let&rsquo;s try to implement our
+own hash map so that we can qualitatively understand the memory footprint and
+performance.</p><p>The hash map stores key-value pairs in buckets. The underlying data
+structure those key-value pairs are stored in is an array. For our Python
+equivalent, we will use a list. Those buckets are again stored in arrays, so
+we can use a list again to store them.</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span><span style=color:#66d9ef>def</span> <span style=color:#a6e22e>naive_hash</span>(value: str):
+</span></span><span style=display:flex><span>    <span style=color:#75715e># Maps every string starting with &#39;a&#39; or &#39;A&#39; to 0, &#39;b&#39; or &#39;B&#39; to 1, etc.</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> value[<span style=color:#ae81ff>0</span>] <span style=color:#f92672>not</span> <span style=color:#f92672>in</span> <span style=color:#e6db74>&#39;abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ&#39;</span>:
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>raise</span> <span style=color:#a6e22e>ValueError</span>(<span style=color:#e6db74>&#39;naive_hash supports only ascii letters&#39;</span>)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> ord(value[<span style=color:#ae81ff>0</span>]<span style=color:#f92672>.</span>upper()) <span style=color:#f92672>-</span> <span style=color:#ae81ff>65</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>class</span> <span style=color:#a6e22e>KeyValue</span>:
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>def</span> __init__(self, key, value):
+</span></span><span style=display:flex><span>        self<span style=color:#f92672>.</span>key <span style=color:#f92672>=</span> key
+</span></span><span style=display:flex><span>        self<span style=color:#f92672>.</span>value <span style=color:#f92672>=</span> value
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>def</span> __repr__(self):
+</span></span><span style=display:flex><span>        cls <span style=color:#f92672>=</span> self<span style=color:#f92672>.</span>__class__<span style=color:#f92672>.</span>__name__
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span> <span style=color:#e6db74>f</span><span style=color:#e6db74>&#39;&lt;</span><span style=color:#e6db74>{</span>cls<span style=color:#e6db74>}</span><span style=color:#e6db74>(key=</span><span style=color:#e6db74>{</span>self<span style=color:#f92672>.</span>key<span style=color:#e6db74>}</span><span style=color:#e6db74>, value=</span><span style=color:#e6db74>{</span>self<span style=color:#f92672>.</span>value<span style=color:#e6db74>}</span><span style=color:#e6db74>)&gt;&#39;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>class</span> <span style=color:#a6e22e>Bucket</span>:
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>def</span> __init__(self):
+</span></span><span style=display:flex><span>        <span style=color:#75715e># Bucket holds a list of key-value pairs.</span>
+</span></span><span style=display:flex><span>        self<span style=color:#f92672>.</span>_keys_values: list[KeyValue] <span style=color:#f92672>=</span> []
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>def</span> <span style=color:#a6e22e>put</span>(self, target: KeyValue):
+</span></span><span style=display:flex><span>        <span style=color:#75715e># Check whether this key is already present. If it is replace its value.</span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>for</span> key_value <span style=color:#f92672>in</span> self<span style=color:#f92672>.</span>_keys_values:
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>if</span> key_value<span style=color:#f92672>.</span>key <span style=color:#f92672>==</span> target<span style=color:#f92672>.</span>key:
+</span></span><span style=display:flex><span>                key_value<span style=color:#f92672>.</span>value <span style=color:#f92672>=</span> target<span style=color:#f92672>.</span>value
+</span></span><span style=display:flex><span>                <span style=color:#66d9ef>return</span>
+</span></span><span style=display:flex><span>        <span style=color:#75715e># This key is not present, just append the key-value pair.</span>
+</span></span><span style=display:flex><span>        self<span style=color:#f92672>.</span>_keys_values<span style=color:#f92672>.</span>append(target)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>def</span> <span style=color:#a6e22e>get</span>(self, key: str) <span style=color:#f92672>-&gt;</span> KeyValue:
+</span></span><span style=display:flex><span>        <span style=color:#75715e># If there are many key-value pairs in a bucket, we have to check </span>
+</span></span><span style=display:flex><span>        <span style=color:#75715e># each one for the key we are searching for.</span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>for</span> key_value <span style=color:#f92672>in</span> self<span style=color:#f92672>.</span>_keys_values:
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>if</span> key_value<span style=color:#f92672>.</span>key <span style=color:#f92672>==</span> key:
+</span></span><span style=display:flex><span>                <span style=color:#66d9ef>return</span> key_value
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>raise</span> <span style=color:#a6e22e>KeyError</span>(<span style=color:#e6db74>f</span><span style=color:#e6db74>&#39;no key &#34;</span><span style=color:#e6db74>{</span>key<span style=color:#e6db74>}</span><span style=color:#e6db74>&#34;&#39;</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>def</span> <span style=color:#a6e22e>delete</span>(self, key: str):
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>for</span> key_value <span style=color:#f92672>in</span> self<span style=color:#f92672>.</span>_keys_values:
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>if</span> key_value<span style=color:#f92672>.</span>key <span style=color:#f92672>==</span> key:
+</span></span><span style=display:flex><span>                self<span style=color:#f92672>.</span>_keys_values<span style=color:#f92672>.</span>remove(key_value)
+</span></span><span style=display:flex><span>                <span style=color:#66d9ef>return</span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>raise</span> <span style=color:#a6e22e>KeyError</span>(<span style=color:#e6db74>f</span><span style=color:#e6db74>&#39;no key &#34;</span><span style=color:#e6db74>{</span>key<span style=color:#e6db74>}</span><span style=color:#e6db74>&#34;&#39;</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>def</span> <span style=color:#a6e22e>contains</span>(self, key) <span style=color:#f92672>-&gt;</span> bool:
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>for</span> key_value <span style=color:#f92672>in</span> self<span style=color:#f92672>.</span>_keys_values:
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>if</span> key_value<span style=color:#f92672>.</span>key <span style=color:#f92672>==</span> key:
+</span></span><span style=display:flex><span>                <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>True</span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>False</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>def</span> __bool__(self):
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span> bool(self<span style=color:#f92672>.</span>_keys_values)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>def</span> __repr__(self):
+</span></span><span style=display:flex><span>        cls <span style=color:#f92672>=</span> self<span style=color:#f92672>.</span>__class__<span style=color:#f92672>.</span>__name__
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span> <span style=color:#e6db74>f</span><span style=color:#e6db74>&#39;&lt;</span><span style=color:#e6db74>{</span>cls<span style=color:#e6db74>}</span><span style=color:#e6db74> </span><span style=color:#e6db74>{</span>repr(self<span style=color:#f92672>.</span>_keys_values)<span style=color:#e6db74>}</span><span style=color:#e6db74>&gt;&#39;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>class</span> <span style=color:#a6e22e>HashMap</span>:
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>def</span> __init__(self):
+</span></span><span style=display:flex><span>        <span style=color:#75715e># HashMap holds a list of buckets.</span>
+</span></span><span style=display:flex><span>        <span style=color:#75715e># We initialize the list with empty buckets to avoid memory </span>
+</span></span><span style=display:flex><span>        <span style=color:#75715e># reallocation. There are 26 ascii letters, so we create 26 buckets.</span>
+</span></span><span style=display:flex><span>        self<span style=color:#f92672>.</span>_buckets: list[Bucket] <span style=color:#f92672>=</span> [Bucket() <span style=color:#66d9ef>for</span> _ <span style=color:#f92672>in</span> range(<span style=color:#ae81ff>26</span>)]
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>def</span> <span style=color:#a6e22e>put</span>(self, key_value: KeyValue):
+</span></span><span style=display:flex><span>        <span style=color:#75715e># We calculate the index, i.e. the corresponding bucket for this key.</span>
+</span></span><span style=display:flex><span>        hash_value <span style=color:#f92672>=</span> naive_hash(key_value<span style=color:#f92672>.</span>key)
+</span></span><span style=display:flex><span>        self<span style=color:#f92672>.</span>_buckets[hash_value]<span style=color:#f92672>.</span>put(key_value)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>def</span> <span style=color:#a6e22e>get</span>(self, key: str):
+</span></span><span style=display:flex><span>        hash_value <span style=color:#f92672>=</span> naive_hash(key)
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span> self<span style=color:#f92672>.</span>_buckets[hash_value]<span style=color:#f92672>.</span>get(key)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>def</span> <span style=color:#a6e22e>delete</span>(self, key: str):
+</span></span><span style=display:flex><span>        hash_value <span style=color:#f92672>=</span> naive_hash(key)
+</span></span><span style=display:flex><span>        self<span style=color:#f92672>.</span>_buckets[hash_value]<span style=color:#f92672>.</span>delete(key)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>def</span> <span style=color:#a6e22e>contains</span>(self, key) <span style=color:#f92672>-&gt;</span> bool:
+</span></span><span style=display:flex><span>        hash_value <span style=color:#f92672>=</span> naive_hash(key)
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span> self<span style=color:#f92672>.</span>_buckets[hash_value]<span style=color:#f92672>.</span>contains(key)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>def</span> __repr__(self):
+</span></span><span style=display:flex><span>        cls <span style=color:#f92672>=</span> self<span style=color:#f92672>.</span>__class__<span style=color:#f92672>.</span>__name__
+</span></span><span style=display:flex><span>        buckets <span style=color:#f92672>=</span> <span style=color:#e6db74>&#39;, &#39;</span><span style=color:#f92672>.</span>join(
+</span></span><span style=display:flex><span>            <span style=color:#e6db74>f</span><span style=color:#e6db74>&#39;</span><span style=color:#e6db74>{</span>idx<span style=color:#e6db74>}</span><span style=color:#e6db74>: </span><span style=color:#e6db74>{</span>bucket<span style=color:#e6db74>}</span><span style=color:#e6db74>&#39;</span> <span style=color:#66d9ef>for</span> idx, bucket <span style=color:#f92672>in</span> enumerate(self<span style=color:#f92672>.</span>_buckets)
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>if</span> bucket
+</span></span><span style=display:flex><span>        )
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>if</span> buckets:
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>return</span> <span style=color:#e6db74>f</span><span style=color:#e6db74>&#39;&lt;</span><span style=color:#e6db74>{</span>cls<span style=color:#e6db74>}</span><span style=color:#e6db74> </span><span style=color:#e6db74>{</span>buckets<span style=color:#e6db74>}</span><span style=color:#e6db74>&gt;&#39;</span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span> <span style=color:#e6db74>f</span><span style=color:#e6db74>&#39;&lt;</span><span style=color:#e6db74>{</span>cls<span style=color:#e6db74>}</span><span style=color:#e6db74>&gt;&#39;</span>
+</span></span></code></pre></div><p>There is a lot to digest in the code sample above, so let&rsquo;s repeat the most
+important steps and points. The main idea of the hash map is to find the
+corresponding bucket for a given key. We do this by using our <code>naive_hash</code>
+function which produces a bucket index for any string containing ascii letters.
+There is one subtle point to be made regarding our naive hash function. It
+produces the same hash value, i.e. the same bucket index for all strings
+starting with the same letter. This is called a hash collision, and when
+that happens, the corresponding bucket stores multiple key-value pairs.
+Let&rsquo;s see an example.</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-shell data-lang=shell><span style=display:flex><span>&gt;&gt;&gt; hm <span style=color:#f92672>=</span> Hashmap<span style=color:#f92672>()</span>
+</span></span><span style=display:flex><span>&gt;&gt;&gt; hm
+</span></span><span style=display:flex><span>&lt;Hashmap&gt;  <span style=color:#75715e># our hash map is empty</span>
+</span></span><span style=display:flex><span>&gt;&gt;&gt; hm.put<span style=color:#f92672>(</span>KeyValue<span style=color:#f92672>(</span><span style=color:#e6db74>&#39;one&#39;</span>, 1<span style=color:#f92672>))</span> 
+</span></span><span style=display:flex><span>&gt;&gt;&gt; hm
+</span></span><span style=display:flex><span>&lt;HashMap 14: &lt;Bucket <span style=color:#f92672>[</span>&lt;KeyValue<span style=color:#f92672>(</span>key<span style=color:#f92672>=</span>one, value<span style=color:#f92672>=</span>1<span style=color:#f92672>)</span>&gt;<span style=color:#f92672>]</span>&gt;&gt;  <span style=color:#75715e># bucket 14 got an item</span>
+</span></span><span style=display:flex><span>&gt;&gt;&gt; hm.put<span style=color:#f92672>(</span>KeyValue<span style=color:#f92672>(</span><span style=color:#e6db74>&#39;two&#39;</span>, 2<span style=color:#f92672>))</span>
+</span></span><span style=display:flex><span>&gt;&gt;&gt; hm
+</span></span><span style=display:flex><span>&lt;HashMap 14: &lt;Bucket <span style=color:#f92672>[</span>&lt;KeyValue<span style=color:#f92672>(</span>key<span style=color:#f92672>=</span>one, value<span style=color:#f92672>=</span>1<span style=color:#f92672>)</span>&gt;<span style=color:#f92672>]</span>&gt;, 19: &lt;Bucket <span style=color:#f92672>[</span>&lt;KeyValue<span style=color:#f92672>(</span>key<span style=color:#f92672>=</span>two, value<span style=color:#f92672>=</span>2<span style=color:#f92672>)</span>&gt;<span style=color:#f92672>]</span>&gt;&gt;
+</span></span><span style=display:flex><span>&gt;&gt;&gt; hm.put<span style=color:#f92672>(</span>KeyValue<span style=color:#f92672>(</span><span style=color:#e6db74>&#39;three&#39;</span>, 3<span style=color:#f92672>))</span>  <span style=color:#75715e># hash collision</span>
+</span></span><span style=display:flex><span>&gt;&gt;&gt; hm
+</span></span><span style=display:flex><span>&lt;HashMap 14: &lt;Bucket <span style=color:#f92672>[</span>&lt;KeyValue<span style=color:#f92672>(</span>key<span style=color:#f92672>=</span>one, value<span style=color:#f92672>=</span>1<span style=color:#f92672>)</span>&gt;<span style=color:#f92672>]</span>&gt;, 19: &lt;Bucket <span style=color:#f92672>[</span>&lt;KeyValue<span style=color:#f92672>(</span>key<span style=color:#f92672>=</span>two, value<span style=color:#f92672>=</span>2<span style=color:#f92672>)</span>&gt;, &lt;KeyValue<span style=color:#f92672>(</span>key<span style=color:#f92672>=</span>three, value<span style=color:#f92672>=</span>3<span style=color:#f92672>)</span>&gt;<span style=color:#f92672>]</span>&gt;&gt;
+</span></span><span style=display:flex><span>&gt;&gt;&gt; naive_hash<span style=color:#f92672>(</span><span style=color:#e6db74>&#39;one&#39;</span><span style=color:#f92672>)</span>, naive_hash<span style=color:#f92672>(</span><span style=color:#e6db74>&#39;two&#39;</span><span style=color:#f92672>)</span>, naive_hash<span style=color:#f92672>(</span><span style=color:#e6db74>&#39;three&#39;</span><span style=color:#f92672>)</span>
+</span></span><span style=display:flex><span><span style=color:#f92672>(</span>14, 19, 19<span style=color:#f92672>)</span>
+</span></span></code></pre></div><p>From the above example we can see that <code>'one'</code> goes to bucket 14, while
+<code>'two'</code> and <code>'three'</code> produce a hash collision and end up in the same bucket,
+bucket 19.</p><h3 id=hash-map-performance>Hash Map Performance
+<a class=heading-link href=#hash-map-performance><i class="fa fa-link" aria-hidden=true title="Link to heading"></i>
+<span class=sr-only>Link to heading</span></a></h3><p>Because of the underlying hash function, finding the appropriate bucket is a
+single operation, which means retrieving elements from the hash map is very
+fast. In fact, it is <code>O(1)</code>, i.e. independent of the number of elements in
+the hash map unless collisions are so frequent elements end up in the same
+bucket. That&rsquo;s why production ready hash maps reallocate memory, keep track
+of bucket occupancy, and redistribute elements in the bucket to keep
+retrieving elements from the hash map <code>O(1)</code>. To prevent hash collisions
+from happening too frequently, Python keeps approximately one third of the
+underlying array unoccupied. This increases the memory footprint, but it gives
+a huge performance gain.</p><p>Although sets and dictionaries have a memory overhead, they are data structures
 optimized for fast membership checking, and you should use them with
-the <code>in</code> operator whenever possible.</p>
-<h1 id="what-is-a-collection">
-  What is a Collection
-  <a class="heading-link" href="#what-is-a-collection">
-    <i class="fa fa-link" aria-hidden="true" title="Link to heading"></i>
-    <span class="sr-only">Link to heading</span>
-  </a>
-</h1>
-<ul>
-<li>swappable collection - just changing braces?</li>
-<li>what is a collection?</li>
-<li>why does <code>1 in range(10)</code> work?</li>
-</ul>
-<h1 id="user-defined-collections-and-protocols">
-  User Defined Collections and Protocols
-  <a class="heading-link" href="#user-defined-collections-and-protocols">
-    <i class="fa fa-link" aria-hidden="true" title="Link to heading"></i>
-    <span class="sr-only">Link to heading</span>
-  </a>
-</h1>
-
-  </article>
-</section>
-
-  
-
-    </div>
-
-    <footer class="footer">
-  <section class="container">
-    ©
-    
-    2023
-     Ivan Jedovnicki 
-    ·
-    
-    Powered by <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> & <a href="https://github.com/luizdepra/hugo-coder/" target="_blank" rel="noopener">Coder</a>.
-    
-  </section>
-</footer>
-
-  </main>
-
-  
-
-  
-  
-  <script src="/js/coder.min.369d90111ae4409b4e51de5efd23a46b92663fcc82dc9a0efde7f70bffc3f949.js" integrity="sha256-Np2QERrkQJtOUd5e/SOka5JmP8yC3JoO/ef3C//D&#43;Uk="></script>
-  
-
-  
-
-  
-
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</body>
-
-</html>
+the <code>in</code> operator whenever possible.</p><h1 id=what-is-a-collection>What is a Collection
+<a class=heading-link href=#what-is-a-collection><i class="fa fa-link" aria-hidden=true title="Link to heading"></i>
+<span class=sr-only>Link to heading</span></a></h1><p>Recalling our example from the introduction, you might believe that
+affecting performance with regard to the <code>in</code> operator amounts to changing
+braces; from square and round to curly. Actually, that&rsquo;s not far from the
+truth. The question is, why does it work? And, maybe more importantly, how
+can you define your own objects that support membership checking via the
+<code>in</code> operator?</p><p>This works because lists, tuples, dictionaries, and sets are all instances
+of <code>collections.abc.Collection</code> class. That is an abstract base class used
+to define a protocol an instance of that class should implement. If you
+check the documentation, you will see that <code>Collection</code> inherits from
+<code>Sized</code>, <code>Iterable</code>, and <code>Container</code>. Inheriting from <code>Sized</code> means that you
+can ask how many elements are there in the collection by implementing
+<code>__len__</code>. Inheriting from <code>Iterable</code> means that the collection can be
+iterated over using a for loop, by implementing <code>__iter__</code>. And finally,
+inheriting from <code>Container</code> means that you can test for membership using the
+<code>in</code> operator by implementing the <code>__contains__</code> special method. This is
+what all collections have in common, and this is what makes Python easy to
+use. Let&rsquo;s explore this through some code samples.</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span><span style=color:#66d9ef>class</span> <span style=color:#a6e22e>ContainerTest</span>:
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>def</span> __init__(self, x, y)
+</span></span><span style=display:flex><span>        self<span style=color:#f92672>.</span>x <span style=color:#f92672>=</span> x
+</span></span><span style=display:flex><span>        self<span style=color:#f92672>.</span>y <span style=color:#f92672>=</span> y
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>def</span> __contains__(self, item):
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span> item <span style=color:#f92672>in</span> (self<span style=color:#f92672>.</span>x, self<span style=color:#f92672>.</span>y)
+</span></span></code></pre></div><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-shell data-lang=shell><span style=display:flex><span>&gt;&gt;&gt; ct <span style=color:#f92672>=</span> ContainerTest<span style=color:#f92672>(</span>1, 2<span style=color:#f92672>)</span>
+</span></span><span style=display:flex><span>&gt;&gt;&gt; <span style=color:#ae81ff>1</span> in ct
+</span></span><span style=display:flex><span>True
+</span></span><span style=display:flex><span>&gt;&gt;&gt; <span style=color:#ae81ff>2</span> in ct
+</span></span><span style=display:flex><span>True
+</span></span><span style=display:flex><span>&gt;&gt;&gt; <span style=color:#ae81ff>3</span> in ct
+</span></span><span style=display:flex><span>False
+</span></span></code></pre></div><p>In the example above, Python will actually call the <code>__contains__</code> special
+method like this.</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span>ct<span style=color:#f92672>.</span>__contains__(<span style=color:#ae81ff>1</span>)
+</span></span></code></pre></div><p>That&rsquo;s fairly straightforward, but what is perhaps less known is that Python
+will try to support the <code>in</code> operator event if <code>__contains__</code> is not
+implemented. First, Python will try iterating over the collection if that
+object supports iteration via <code>__iter__</code>. Lastly, it will try membership
+testing using the legacy <code>__getitem__</code> protocol. Let&rsquo;s take a look at a few
+code examples.</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span><span style=color:#66d9ef>class</span> <span style=color:#a6e22e>IterableTest</span>:
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>def</span> __init__(self, x, y):
+</span></span><span style=display:flex><span>        self<span style=color:#f92672>.</span>x <span style=color:#f92672>=</span> x
+</span></span><span style=display:flex><span>        self<span style=color:#f92672>.</span>y <span style=color:#f92672>=</span> y
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>def</span> __iter__(self):
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>yield from</span> (self<span style=color:#f92672>.</span>x, self<span style=color:#f92672>.</span>y)
+</span></span></code></pre></div><p>This class supports iteration, and that is enough for membership testing
+using the <code>in</code> operator. That&rsquo;s the reason why the <code>in</code> operator works with
+generators as well.</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-shell data-lang=shell><span style=display:flex><span>&gt;&gt;&gt; it <span style=color:#f92672>=</span> IterableTest<span style=color:#f92672>(</span>1, 2<span style=color:#f92672>)</span>
+</span></span><span style=display:flex><span>&gt;&gt;&gt; <span style=color:#ae81ff>1</span> in ct
+</span></span><span style=display:flex><span>True
+</span></span><span style=display:flex><span>&gt;&gt;&gt; <span style=color:#ae81ff>2</span> in ct
+</span></span><span style=display:flex><span>True
+</span></span><span style=display:flex><span>&gt;&gt;&gt; <span style=color:#ae81ff>3</span> in ct
+</span></span><span style=display:flex><span>False
+</span></span></code></pre></div><p>Finally, if neither <code>__contains__</code> nor <code>__iter__</code> is available, Python will
+try the legacy <code>__getitem__</code> protocol for membership testing (and iteration).</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span><span style=color:#66d9ef>class</span> <span style=color:#a6e22e>GetItemTest</span>:
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>def</span> __init__(self, x, y):
+</span></span><span style=display:flex><span>        self<span style=color:#f92672>.</span>x <span style=color:#f92672>=</span> x
+</span></span><span style=display:flex><span>        self<span style=color:#f92672>.</span>y <span style=color:#f92672>=</span> y
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>def</span> __getitem__(self, item):
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>if</span> item <span style=color:#f92672>==</span> <span style=color:#ae81ff>0</span>:
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>return</span> self<span style=color:#f92672>.</span>x
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>elif</span> item <span style=color:#f92672>==</span> <span style=color:#ae81ff>1</span>:
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>return</span> self<span style=color:#f92672>.</span>y
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>else</span>:
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>raise</span> <span style=color:#a6e22e>IndexError</span>
+</span></span></code></pre></div><p>The <code>__getitem__</code> protocol is used to support the indexing operation, such
+as you would apply on a list.</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-shell data-lang=shell><span style=display:flex><span>&gt;&gt;&gt; l <span style=color:#f92672>=</span> <span style=color:#f92672>[</span>1, 2, 3<span style=color:#f92672>]</span>
+</span></span><span style=display:flex><span>&gt;&gt;&gt; l<span style=color:#f92672>[</span>0<span style=color:#f92672>]</span>  <span style=color:#75715e># l.__getitem__(0)</span>
+</span></span><span style=display:flex><span><span style=color:#ae81ff>1</span>
+</span></span></code></pre></div><p>Let&rsquo;s verify that <code>__getitem__</code> supports membership testing.</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-shell data-lang=shell><span style=display:flex><span>&gt;&gt;&gt; gt <span style=color:#f92672>=</span> GetItemTest<span style=color:#f92672>(</span>1, 2<span style=color:#f92672>)</span>
+</span></span><span style=display:flex><span>&gt;&gt;&gt; <span style=color:#ae81ff>1</span> in ct
+</span></span><span style=display:flex><span>True
+</span></span><span style=display:flex><span>&gt;&gt;&gt; <span style=color:#ae81ff>2</span> in ct
+</span></span><span style=display:flex><span>True
+</span></span><span style=display:flex><span>&gt;&gt;&gt; <span style=color:#ae81ff>3</span> in ct
+</span></span><span style=display:flex><span>False
+</span></span></code></pre></div><h1 id=conclusion>Conclusion
+<a class=heading-link href=#conclusion><i class="fa fa-link" aria-hidden=true title="Link to heading"></i>
+<span class=sr-only>Link to heading</span></a></h1><p>We have seen that the <code>in</code> operator is compatible with many data structures.
+Python will try to support that operator first by checking whether the
+<code>__contains__</code> special method is implemented. If it is not, it will try
+iterating through the collection by using <code>__iter__</code>, or <code>__getitem__</code> if
+the former is not available. If elements of a collection are hashable, the
+<code>in</code> operator will be most performant with sets and dictionaries.</p></article></section></div><footer class=footer><section class=container>©
+2023
+Ivan Jedovnicki
+·
+Powered by <a href=https://gohugo.io/ target=_blank rel=noopener>Hugo</a> & <a href=https://github.com/luizdepra/hugo-coder/ target=_blank rel=noopener>Coder</a>.</section></footer></main><script src=/js/coder.min.6ae284be93d2d19dad1f02b0039508d9aab3180a12a06dcc71b0b0ef7825a317.js integrity="sha256-auKEvpPS0Z2tHwKwA5UI2aqzGAoSoG3McbCw73gloxc="></script></body></html>
