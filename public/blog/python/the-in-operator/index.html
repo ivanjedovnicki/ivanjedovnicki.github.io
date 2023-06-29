@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>
+  The in Operator · ivan jedovnicki
+</title>
+  <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
+
+
+
+
+<meta name="author" content="Ivan Jedovnicki">
+<meta name="description" content="swappable collections custom objects allowing for membership tests via the contains special method custom objects and delegation thinking about the in operator as an interface __iter__ __getitem__ legacy protocol  Introduction  Link to heading   Testing whether an element is present in a collection is easy in Python using the in operator. It is almost as easy as asking a question
+&gt;&gt;&gt; &#39;one&#39; in [&#39;one&#39;, &#39;two&#39;, &#39;three&#39;] True &gt;&gt;&gt; &#39;four&#39; in (&#39;one&#39;, &#39;two&#39;, &#39;three&#39;) False &gt;&gt;&gt; &#39;five&#39; in {&#39;one&#39;, &#39;two&#39;, &#39;three&#39;} False &gt;&gt;&gt; &#39;three&#39; in {&#39;one&#39;: 1, &#39;two&#39;: 2, &#39;three&#39;: 3} True From the examples above, we can see that the in operator works with various collection types: lists, tuples, sets, and dictionaries.">
+<meta name="keywords" content="python, developer">
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="The in Operator"/>
+<meta name="twitter:description" content="swappable collections custom objects allowing for membership tests via the contains special method custom objects and delegation thinking about the in operator as an interface __iter__ __getitem__ legacy protocol  Introduction  Link to heading   Testing whether an element is present in a collection is easy in Python using the in operator. It is almost as easy as asking a question
+&gt;&gt;&gt; &#39;one&#39; in [&#39;one&#39;, &#39;two&#39;, &#39;three&#39;] True &gt;&gt;&gt; &#39;four&#39; in (&#39;one&#39;, &#39;two&#39;, &#39;three&#39;) False &gt;&gt;&gt; &#39;five&#39; in {&#39;one&#39;, &#39;two&#39;, &#39;three&#39;} False &gt;&gt;&gt; &#39;three&#39; in {&#39;one&#39;: 1, &#39;two&#39;: 2, &#39;three&#39;: 3} True From the examples above, we can see that the in operator works with various collection types: lists, tuples, sets, and dictionaries."/>
+
+<meta property="og:title" content="The in Operator" />
+<meta property="og:description" content="swappable collections custom objects allowing for membership tests via the contains special method custom objects and delegation thinking about the in operator as an interface __iter__ __getitem__ legacy protocol  Introduction  Link to heading   Testing whether an element is present in a collection is easy in Python using the in operator. It is almost as easy as asking a question
+&gt;&gt;&gt; &#39;one&#39; in [&#39;one&#39;, &#39;two&#39;, &#39;three&#39;] True &gt;&gt;&gt; &#39;four&#39; in (&#39;one&#39;, &#39;two&#39;, &#39;three&#39;) False &gt;&gt;&gt; &#39;five&#39; in {&#39;one&#39;, &#39;two&#39;, &#39;three&#39;} False &gt;&gt;&gt; &#39;three&#39; in {&#39;one&#39;: 1, &#39;two&#39;: 2, &#39;three&#39;: 3} True From the examples above, we can see that the in operator works with various collection types: lists, tuples, sets, and dictionaries." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://ivanjedovnicki.github.io/blog/python/the-in-operator/" /><meta property="article:section" content="blog" />
+<meta property="article:published_time" content="2023-05-24T19:10:35+02:00" />
+<meta property="article:modified_time" content="2023-05-24T19:10:35+02:00" />
+
+
+
+
+
+<link rel="canonical" href="https://ivanjedovnicki.github.io/blog/python/the-in-operator/">
+
+
+<link rel="preload" href="/fonts/forkawesome-webfont.woff2?v=1.2.0" as="font" type="font/woff2" crossorigin>
+
+
+  
+  
+  <link rel="stylesheet" href="/css/coder.min.65236a6d834b26194eed04a2a3b45e44d9194ef9e620253705d4bef03bd7ef81.css" integrity="sha256-ZSNqbYNLJhlO7QSio7ReRNkZTvnmICU3BdS&#43;8DvX74E=" crossorigin="anonymous" media="screen" />
+
+
+
+
+
+
+  
+    
+    
+    <link rel="stylesheet" href="/css/coder-dark.min.f6534b0b446b75d9b6ad77a97d43ede2ddaeff1b6e2361fb7198d6f8fcb7f83f.css" integrity="sha256-9lNLC0Rrddm2rXepfUPt4t2u/xtuI2H7cZjW&#43;Py3&#43;D8=" crossorigin="anonymous" media="screen" />
+  
+
+
+
+ 
+
+
+
+
+<link rel="icon" type="image/png" href="/images/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="/images/favicon-16x16.png" sizes="16x16">
+
+<link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+
+<link rel="manifest" href="/site.webmanifest">
+<link rel="mask-icon" href="/images/safari-pinned-tab.svg" color="#5bbad5">
+
+
+
+
+
+
+
+
+
+</head>
+
+
+
+
+
+
+<body class="preload-transitions colorscheme-auto">
+  
+<div class="float-container">
+    <a id="dark-mode-toggle" class="colorscheme-toggle">
+        <i class="fa fa-adjust fa-fw" aria-hidden="true"></i>
+    </a>
+</div>
+
+
+  <main class="wrapper">
+    <nav class="navigation">
+  <section class="container">
+    <a class="navigation-title" href="/">
+      ivan jedovnicki
+    </a>
+    
+      <input type="checkbox" id="menu-toggle" />
+      <label class="menu-button float-right" for="menu-toggle">
+        <i class="fa fa-bars fa-fw" aria-hidden="true"></i>
+      </label>
+      <ul class="navigation-list">
+        
+          
+            <li class="navigation-item">
+              <a class="navigation-link" href="/about/">About</a>
+            </li>
+          
+            <li class="navigation-item">
+              <a class="navigation-link" href="/blog/">Blog</a>
+            </li>
+          
+            <li class="navigation-item">
+              <a class="navigation-link" href="/contact/">Contact me</a>
+            </li>
+          
+        
+        
+      </ul>
+    
+  </section>
+</nav>
+
+
+    <div class="content">
+      
+  <section class="container page">
+  <article>
+    <header>
+      <h1 class="title">
+        <a class="title-link" href="https://ivanjedovnicki.github.io/blog/python/the-in-operator/">
+          The in Operator
+        </a>
+      </h1>
+    </header>
+
+    <ul>
+<li>swappable collections</li>
+<li>custom objects allowing for membership tests via the <strong>contains</strong> special
+method</li>
+<li>custom objects and delegation</li>
+<li>thinking about the <code>in</code> operator as an interface</li>
+<li><code>__iter__</code></li>
+<li><code>__getitem__</code> legacy protocol</li>
+</ul>
+<h1 id="introduction">
+  Introduction
+  <a class="heading-link" href="#introduction">
+    <i class="fa fa-link" aria-hidden="true" title="Link to heading"></i>
+    <span class="sr-only">Link to heading</span>
+  </a>
+</h1>
+<p>Testing whether an element is present in a collection is easy in Python using
+the <code>in</code> operator. It is almost as easy as asking a question</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">&gt;&gt;&gt; <span style="color:#e6db74">&#39;one&#39;</span>  in <span style="color:#f92672">[</span><span style="color:#e6db74">&#39;one&#39;</span>, <span style="color:#e6db74">&#39;two&#39;</span>, <span style="color:#e6db74">&#39;three&#39;</span><span style="color:#f92672">]</span>
+True
+&gt;&gt;&gt; <span style="color:#e6db74">&#39;four&#39;</span>  in <span style="color:#f92672">(</span><span style="color:#e6db74">&#39;one&#39;</span>, <span style="color:#e6db74">&#39;two&#39;</span>, <span style="color:#e6db74">&#39;three&#39;</span><span style="color:#f92672">)</span>
+False
+&gt;&gt;&gt; <span style="color:#e6db74">&#39;five&#39;</span> in <span style="color:#f92672">{</span><span style="color:#e6db74">&#39;one&#39;</span>, <span style="color:#e6db74">&#39;two&#39;</span>, <span style="color:#e6db74">&#39;three&#39;</span><span style="color:#f92672">}</span>
+False
+&gt;&gt;&gt; <span style="color:#e6db74">&#39;three&#39;</span> in <span style="color:#f92672">{</span><span style="color:#e6db74">&#39;one&#39;</span>: 1, <span style="color:#e6db74">&#39;two&#39;</span>: 2, <span style="color:#e6db74">&#39;three&#39;</span>: 3<span style="color:#f92672">}</span>
+True
+</code></pre></div><p>From the examples above, we can see that the <code>in</code> operator works with various
+collection types: lists, tuples, sets, and dictionaries. What about performance?
+If you frequently had to test membership of items against a collection of
+million of elements, which data structure would you choose and why?</p>
+<h1 id="memory-footprint">
+  Memory Footprint
+  <a class="heading-link" href="#memory-footprint">
+    <i class="fa fa-link" aria-hidden="true" title="Link to heading"></i>
+    <span class="sr-only">Link to heading</span>
+  </a>
+</h1>
+<p>Let us examine the memory footprints of the data structures used above.</p>
+<p>To create and store elements in a list, Python has to allocate some memory for
+the list itself, and memory for the pointers to the elements it stores. To
+prevent memory allocation on each <code>list.append</code>, Python allocates some extra
+memory to keep appends fast (amortized <code>O(1)</code>). So while there may be a single
+element in a list, there is actually room for 4. Once those 4 places are
+occupied, Python will perform a reallocation making room for another 4. You can
+test this out for yourself by calling <code>list.__sizeof__()</code> after each append.</p>
+<p>Tuples on the other hand, have a fixed size. That means, there is no
+reallocation and no other layers of indirection. The elements of tuples are
+stored directly in a struct making them very lean, memory wise.</p>
+<p>What about sets and dictionaries? Since the mechanism of storing data is the
+same for those two data structures, namely the hash map, let&rsquo;s take a look at
+how sets perform, memory-wise. Before we do that, here is a simplified look at
+how the hash map algorithm works. Let&rsquo;s say we allocated an array of 30 elements
+that will store pointers to our data. We want to have a way to retrieve a
+particular item without having to traverse the whole array. To insert an element
+<code>'spam'</code>, we need a hashing function that will give us the index offset (the
+index of the array where that element will be stored) of a given element. To
+retrieve an element, we use the hash function to calculate its hash value,
+which gives the index offset of that element in the array thus eliminating the
+need to traverse the whole array. Sometimes, it may happen that different
+elements give the same hash value, resulting in hash collisions. To prevent that
+from happening too frequently, Python keeps approximately one third of the
+underlying array unoccupied. Although this increases the memory footprint, it
+gives a huge performance gain, as the next section explains.</p>
+<p>So, the memory footprint of a tuple is smallest, next is the list, and last are
+sets and dictionaries due to their underlying hash map implementation. What
+about performance? The next section deals with that question.</p>
+<h1 id="performance">
+  Performance
+  <a class="heading-link" href="#performance">
+    <i class="fa fa-link" aria-hidden="true" title="Link to heading"></i>
+    <span class="sr-only">Link to heading</span>
+  </a>
+</h1>
+<p>Finding an element in a tuple or a list potentially requires traversing the
+whole collection and comparing each element in the collection against the
+object which membership you are testing. The following code snippet illustrates
+that:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">find_item</span>(target, collection):
+    <span style="color:#66d9ef">for</span> item <span style="color:#f92672">in</span> collection:
+        <span style="color:#66d9ef">if</span> target <span style="color:#f92672">==</span> item:
+            <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">True</span>
+    <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">False</span>
+</code></pre></div><p>If the <code>target</code> object is not present in the collection, the whole collection
+will be traversed before <code>False</code> is returned. The complexity of such an
+operation is <code>O(n)</code>. For a list twice as long, membership testing will take
+twice as long. If membership checking happens often on large lists or tuples,
+Python will spend quite some time traversing those lists and tuples, over and
+over again.</p>
+<p>For structures based on hash maps, the situation is quite different. To find
+whether the object <code>target</code> is in a collection, we first calculate its hash
+value. From that we can derive the offset index and directly access the element
+of interest from the underlying array. This operation does not depend on the
+collection size, i.e. it is <code>O(1)</code>. In other words, membership checking is fast
+for sets and dictionary keys, and does not depend on the collection size.</p>
+<p>Although sets and dictionaries have a memory overhead, they are data structures
+optimized for fast membership checking, and you should use them with
+the <code>in</code> operator whenever possible.</p>
+<h1 id="what-is-a-collection">
+  What is a Collection
+  <a class="heading-link" href="#what-is-a-collection">
+    <i class="fa fa-link" aria-hidden="true" title="Link to heading"></i>
+    <span class="sr-only">Link to heading</span>
+  </a>
+</h1>
+<ul>
+<li>swappable collection - just changing braces?</li>
+<li>what is a collection?</li>
+<li>why does <code>1 in range(10)</code> work?</li>
+</ul>
+<h1 id="user-defined-collections-and-protocols">
+  User Defined Collections and Protocols
+  <a class="heading-link" href="#user-defined-collections-and-protocols">
+    <i class="fa fa-link" aria-hidden="true" title="Link to heading"></i>
+    <span class="sr-only">Link to heading</span>
+  </a>
+</h1>
+
+  </article>
+</section>
+
+  
+
+    </div>
+
+    <footer class="footer">
+  <section class="container">
+    ©
+    
+    2023
+     Ivan Jedovnicki 
+    ·
+    
+    Powered by <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> & <a href="https://github.com/luizdepra/hugo-coder/" target="_blank" rel="noopener">Coder</a>.
+    
+  </section>
+</footer>
+
+  </main>
+
+  
+
+  
+  
+  <script src="/js/coder.min.369d90111ae4409b4e51de5efd23a46b92663fcc82dc9a0efde7f70bffc3f949.js" integrity="sha256-Np2QERrkQJtOUd5e/SOka5JmP8yC3JoO/ef3C//D&#43;Uk="></script>
+  
+
+  
+
+  
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</body>
+
+</html>
