@@ -1,7 +1,7 @@
 ---
 title: "The in Operator"
 date: 2023-05-24T19:10:35+02:00
-draft: true
+draft: false
 ---
 
 # Introduction
