@@ -198,7 +198,7 @@ that happens, the corresponding bucket stores multiple key-value pairs.
 Let's see an example.
 
 ```shell
->>> hm = Hashmap()
+>>> hm = HashMap()
 >>> hm
 <Hashmap>  # our hash map is empty
 >>> hm.put(KeyValue('one', 1)) 
@@ -307,11 +307,11 @@ generators as well.
 
 ```shell
 >>> it = IterableTest(1, 2)
->>> 1 in ct
+>>> 1 in it
 True
->>> 2 in ct
+>>> 2 in it
 True
->>> 3 in ct
+>>> 3 in it
 False
 ```
 
@@ -346,11 +346,11 @@ Let's verify that `__getitem__` supports membership testing.
 
 ```shell
 >>> gt = GetItemTest(1, 2)
->>> 1 in ct
+>>> 1 in gt
 True
->>> 2 in ct
+>>> 2 in gt
 True
->>> 3 in ct
+>>> 3 in gt
 False
 ```
 
