@@ -1,6 +1,6 @@
 ---
 title: "The in Operator"
-date: 2023-05-24T19:10:35+02:00
+date: 2023-07-01T19:10:35+02:00
 draft: false
 ---
 
@@ -198,7 +198,7 @@ that happens, the corresponding bucket stores multiple key-value pairs.
 Let's see an example.
 
 ```shell
->>> hm = Hashmap()
+>>> hm = HashMap()
 >>> hm
 <Hashmap>  # our hash map is empty
 >>> hm.put(KeyValue('one', 1)) 
@@ -259,7 +259,7 @@ use. Let's explore this through some code samples.
 
 ```python
 class ContainerTest:
-    def __init__(self, x, y)
+    def __init__(self, x, y):
         self.x = x
         self.y = y
 
@@ -285,7 +285,7 @@ ct.__contains__(1)
 ```
 
 That's fairly straightforward, but what is perhaps less known is that Python 
-will try to support the `in` operator event if `__contains__` is not 
+will try to support the `in` operator even if `__contains__` is not 
 implemented. First, Python will try iterating over the collection if that 
 object supports iteration via `__iter__`. Lastly, it will try membership 
 testing using the legacy `__getitem__` protocol. Let's take a look at a few 
@@ -307,11 +307,11 @@ generators as well.
 
 ```shell
 >>> it = IterableTest(1, 2)
->>> 1 in ct
+>>> 1 in it
 True
->>> 2 in ct
+>>> 2 in it
 True
->>> 3 in ct
+>>> 3 in it
 False
 ```
 
@@ -346,11 +346,11 @@ Let's verify that `__getitem__` supports membership testing.
 
 ```shell
 >>> gt = GetItemTest(1, 2)
->>> 1 in ct
+>>> 1 in gt
 True
->>> 2 in ct
+>>> 2 in gt
 True
->>> 3 in ct
+>>> 3 in gt
 False
 ```
 
