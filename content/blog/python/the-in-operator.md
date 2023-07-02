@@ -1,6 +1,6 @@
 ---
 title: "The in Operator"
-date: 2023-05-24T19:10:35+02:00
+date: 2023-07-01T19:10:35+02:00
 draft: false
 ---
 
@@ -285,7 +285,7 @@ ct.__contains__(1)
 ```
 
 That's fairly straightforward, but what is perhaps less known is that Python 
-will try to support the `in` operator event if `__contains__` is not 
+will try to support the `in` operator even if `__contains__` is not 
 implemented. First, Python will try iterating over the collection if that 
 object supports iteration via `__iter__`. Lastly, it will try membership 
 testing using the legacy `__getitem__` protocol. Let's take a look at a few 
