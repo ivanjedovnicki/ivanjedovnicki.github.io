@@ -4,15 +4,6 @@ date: 2023-09-07T18:51:26+02:00
 draft: true
 ---
 
-* cpu bound problems still let other less intensive threads time on the cpu
-  with sys.setswitchinterval (do an experiment and set the interval to 10
-  seconds)
-* what is the concurrent.futures library all about and how can
-  ThreadPoolExecutors help with IO bound problems
-* talk about the synchronization primitives in the threading module
-* what the interpreter actually executes, dis.dis
-* multitasking can be preemptive or cooperative
-
 # Introduction
 
 Few discussions regarding multithreading in Python can escape the infamous
@@ -348,6 +339,8 @@ def cpu_bound(name: str, iterations: int):
             print(f'[cpu-bound-{name}] {q}/100')
 ```
 
+## I/O Bound Problems in Multiple Threads
+
 First, let's take a look at the performance impact of running `io_bound` in 
 multiple threads. For our baseline, we will run the `io_bound` function in 
 the main thread and measure its performance with `time.perf_counter`.
@@ -380,7 +373,7 @@ t2 = time.perf_counter()
 print(f'elapsed for {num_threads} threads: {t2 - t1}')
 ```
 
-The `thread.join` statement means that the main thread, i.e. the thread 
+The `thread.join()` statement means that the main thread, i.e. the thread 
 which starts all other threads will wait until each thread completes before 
 evaluating the `t2` time. For the `io_bound`function running in 20 threads, 
 the total elapsed time was `20.035348607998458`. When threads cooperate, as 
@@ -389,7 +382,105 @@ concurrent problems. Here, each thread does a little work, and releases the
 GIL (`time.sleep` releases the GIL, as do many other system calls) so that 
 some other thread can proceed.
 
-We will examine three cases
-* `io_bound` function executed in multiple threads
-* `cpu_bound` functions executed in multiple threads
-* `io_bound` and `cpu_bound` function executed, each in one thread
+## CPU Bound Problems in Multiple Threads
+
+As in the previous section, we first create a baseline for `cpu_bound`, i.e. 
+we run in it in a single thread and measure its performance with `time.
+perf_counter`. 
+
+```python
+t1 = time.perf_counter()
+cpu_bound('1', 250_000_000)
+t2 = time.perf_counter()
+
+print(f'elapsed: {t2 - t1}')
+```
+
+On my machine this gives the elapsed time of `23.196625341000072` seconds. 
+This is our baseline for a CPU bound problem running in a single thread.
+
+What about running the `cpu_bound` function in just two threads?
+
+```python
+num_threads = 2
+cpu_bound_threads = [
+    threading.Thread(target=cpu_bound, args=(str(i), 250_000_000))
+    for i in range(1, num_threads + 1)
+]
+
+t1 = time.perf_counter()
+for thread in cpu_bound_threads:
+    thread.start()
+for thread in cpu_bound_threads:
+    thread.join()
+t2 = time.perf_counter()
+
+print(f'elapsed for {num_threads} threads: {t2 - t1}')
+```
+
+The running time for a CPU bound problem running in two threads is 
+`47.14984970400019`. This is about double running time of `cpu_bound` 
+in a single thread. Since we know that the Python interpreter can only 
+execute code in a single thread, this is expected. The surprising part is 
+that, although the `cpu_bound` function isn't written for cooperative 
+multitasking, meaning there are no places in the code where the GIL is 
+released, both threads make progress. How? The answer lies in the `sys` 
+module, in two functions 
+* `sys.getswitchinterval()`
+* `sys.setswitchinterval(interval)`
+
+The first function displays the interpreter's currently set thread switch 
+interval, i.e. the interval each thread is given before being interrupted so 
+that another thread has a chance to run even though it can be CPU bound. 
+That's why we were able to run two `cpu_bound` functions concurrently in a 
+way that each made progress. The cool thing about this is that we can set 
+that interval. Doing so will give us a better understanding of the impact 
+performance switching has on execution time. The numbers are displayed in 
+the table below, but your millage may vary depending on your system.
+
+| Switch interval  | Elapsed time for cpu_bound in two threads |
+|------------------|-------------------------------------------|
+| 5   milliseconds | 47.14984970400019                         |
+| 500 microseconds | 49.7365762139998                          |
+| 50  microseconds | 51.83233763200042                         |
+| 5   microseconds | 55.84771065300083                         |
+| 1   microsecond  | 57.08213459699982                         |
+
+These number make sense because as the switching interval decreases, Python 
+spends more time switching context, so the overall execution time increases. 
+Another interesting thing would be setting the switch interval to some large 
+number for the CPU, say 1 second. On my machine, in that case, one thread 
+finishes before the other can make it half way. In the extreme case, the 
+second thread wouldn't even start before the first had finished.
+
+## Mixing CPU Bound and I/O Bound Problems
+
+For the final experiment we will have one `cpu_bound` thread and twenty 
+`io_bound` threads.
+
+```python
+io_bound_threads = [
+    threading.Thread(target=io_bound, args=(str(i), 20, 1))
+    for i in range(1, 21)
+]
+
+cpu_bound_threads = [
+    threading.Thread(target=cpu_bound, args=(str(1), 250_000_000))
+]
+
+threads = io_bound_threads + cpu_bound_threads
+
+t1 = time.perf_counter()
+for thread in threads:
+    thread.start()
+for thread in threads:
+    thread.join()
+t2 = time.perf_counter()
+
+print(f'elapsed for {len(threads)} threads: {t2 - t1}')
+```
+
+The total time for one CPU bound thread and twenty I/O bound threads is 
+`24.7099137109999`, which is pretty neat. It means that you can run one 
+intensive CPU task and many I/O bound tasks without those tasks suffering 
+much in performance.
