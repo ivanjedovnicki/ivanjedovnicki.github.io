@@ -1,7 +1,7 @@
 ---
 title: "Multithreading"
-date: 2023-09-07T18:51:26+02:00
-draft: true
+date: 2023-09-16T07:51:26+02:00
+draft: false
 ---
 
 # Introduction
@@ -66,7 +66,7 @@ system can grind to a halt. In fact, that's what used to happen with older
 operating systems. They only cure was a hard reset. Fortunately, modern
 operating systems use preemptive multitasking, meaning that the OS gives a
 limited slice of CPU time to a process. If a process misbehaves and doesn't
-ceed control willingly, the OS removes it from the CPU and gives another
+cede control willingly, the OS removes it from the CPU and gives another
 process a chance to run.
 
 Cooperative multitasking is an excellent strategy but when employed on a
@@ -128,12 +128,12 @@ thread | bytecode
 1      | LOAD_FAST  (b)
 1      | BINARY_OP  (+)
 1      | STORE_FAST (result)
-# context switch by the OS; OS decides when to switch the execution of threads
+# context switch
 2      | RESUME
 2      | LOAD_FAST  (a)
 2      | LOAD_FAST  (b)
 2      | BINARY_OP  (+)
-# the OS switches threads again
+# context switch
 1      | LOAD_FAST  (result)
 1      | RETURN_VALUE
 # thread 1 is complete
@@ -484,3 +484,12 @@ The total time for one CPU bound thread and twenty I/O bound threads is
 `24.7099137109999`, which is pretty neat. It means that you can run one 
 intensive CPU task and many I/O bound tasks without those tasks suffering 
 much in performance.
+
+# Conclusion
+
+Maybe with the current plan of removing the GIL, such considerations will 
+no longer apply. Until and if that happens, the GIL is here to stay and 
+understanding its impact is important if you have to write concurrent code. 
+To reiterate once more, if your problem is I/O bound, multithreading is a 
+good approach. If your problem is CPU bound, multiprocessing is the way to 
+go with one caveat. Spawn as many processes as there are available cores.
