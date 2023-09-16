@@ -1,0 +1,379 @@
+<!doctype html><html lang=en><head><title>Multithreading · ivan jedovnicki</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=color-scheme content="light dark"><meta name=author content="Ivan Jedovnicki"><meta name=description content="Introduction Link to heading Few discussions regarding multithreading in Python can escape the infamous GIL and the qualification that Python is lacking real multithreading support. In this blog post we will explore, on a few examples whether those qualifications have merit, and if they do, what conditions make them true. Before we start exploring those questions, let&rsquo;s cover some basic concepts.
+Threads vs. Processes Link to heading The CPU has a very limited, specialized language it understands called the instruction set."><meta name=keywords content="python,developer"><meta name=twitter:card content="summary"><meta name=twitter:title content="Multithreading"><meta name=twitter:description content="Introduction Link to heading Few discussions regarding multithreading in Python can escape the infamous GIL and the qualification that Python is lacking real multithreading support. In this blog post we will explore, on a few examples whether those qualifications have merit, and if they do, what conditions make them true. Before we start exploring those questions, let&rsquo;s cover some basic concepts.
+Threads vs. Processes Link to heading The CPU has a very limited, specialized language it understands called the instruction set."><meta property="og:title" content="Multithreading"><meta property="og:description" content="Introduction Link to heading Few discussions regarding multithreading in Python can escape the infamous GIL and the qualification that Python is lacking real multithreading support. In this blog post we will explore, on a few examples whether those qualifications have merit, and if they do, what conditions make them true. Before we start exploring those questions, let&rsquo;s cover some basic concepts.
+Threads vs. Processes Link to heading The CPU has a very limited, specialized language it understands called the instruction set."><meta property="og:type" content="article"><meta property="og:url" content="https://ivanjedovnicki.github.io/blog/python/multithreading/"><meta property="article:section" content="blog"><meta property="article:published_time" content="2023-09-16T07:51:26+02:00"><meta property="article:modified_time" content="2023-09-16T07:51:26+02:00"><link rel=canonical href=https://ivanjedovnicki.github.io/blog/python/multithreading/><link rel=preload href="/fonts/forkawesome-webfont.woff2?v=1.2.0" as=font type=font/woff2 crossorigin><link rel=stylesheet href=/css/coder.min.65236a6d834b26194eed04a2a3b45e44d9194ef9e620253705d4bef03bd7ef81.css integrity="sha256-ZSNqbYNLJhlO7QSio7ReRNkZTvnmICU3BdS+8DvX74E=" crossorigin=anonymous media=screen><link rel=stylesheet href=/css/coder-dark.min.f6534b0b446b75d9b6ad77a97d43ede2ddaeff1b6e2361fb7198d6f8fcb7f83f.css integrity="sha256-9lNLC0Rrddm2rXepfUPt4t2u/xtuI2H7cZjW+Py3+D8=" crossorigin=anonymous media=screen><link rel=icon type=image/png href=/images/favicon-32x32.png sizes=32x32><link rel=icon type=image/png href=/images/favicon-16x16.png sizes=16x16><link rel=apple-touch-icon href=/images/apple-touch-icon.png><link rel=apple-touch-icon sizes=180x180 href=/images/apple-touch-icon.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/images/safari-pinned-tab.svg color=#5bbad5></head><body class="preload-transitions colorscheme-auto"><div class=float-container><a id=dark-mode-toggle class=colorscheme-toggle><i class="fa fa-adjust fa-fw" aria-hidden=true></i></a></div><main class=wrapper><nav class=navigation><section class=container><a class=navigation-title href=/>ivan jedovnicki</a>
+<input type=checkbox id=menu-toggle>
+<label class="menu-button float-right" for=menu-toggle><i class="fa fa-bars fa-fw" aria-hidden=true></i></label><ul class=navigation-list><li class=navigation-item><a class=navigation-link href=/about/>About</a></li><li class=navigation-item><a class=navigation-link href=/blog/>Blog</a></li><li class=navigation-item><a class=navigation-link href=/contact/>Contact me</a></li></ul></section></nav><div class=content><section class="container page"><article><header><h1 class=title><a class=title-link href=https://ivanjedovnicki.github.io/blog/python/multithreading/>Multithreading</a></h1></header><h1 id=introduction>Introduction
+<a class=heading-link href=#introduction><i class="fa fa-link" aria-hidden=true title="Link to heading"></i>
+<span class=sr-only>Link to heading</span></a></h1><p>Few discussions regarding multithreading in Python can escape the infamous
+GIL and the qualification that Python is lacking real multithreading support.
+In this blog post we will explore, on a few examples whether those
+qualifications have merit, and if they do, what conditions make them true.
+Before we start exploring those questions, let&rsquo;s cover some basic concepts.</p><h1 id=threads-vs-processes>Threads vs. Processes
+<a class=heading-link href=#threads-vs-processes><i class="fa fa-link" aria-hidden=true title="Link to heading"></i>
+<span class=sr-only>Link to heading</span></a></h1><p>The CPU has a very limited, specialized language it understands called the
+instruction set. Whatever programming language you use, be it a statically
+typed compiled language like C, or a dynamically typed interpreted language
+like Python, the code you write has to be translated into a language the CPU
+understands. Whether that translation happens by compiling and linking (C) or
+by some intermediate agent like a virtual machine (Python), those
+instructions are loaded from memory onto the CPU. Your program had just
+become a process, started with at least one thread, the main thread.</p><h2 id=processes>Processes
+<a class=heading-link href=#processes><i class="fa fa-link" aria-hidden=true title="Link to heading"></i>
+<span class=sr-only>Link to heading</span></a></h2><p>A process is a running instance of a program, having its own isolated memory
+space. That means one process cannot interfere with the execution of another
+process. It also means that interprocess communication is somewhat expensive
+as data has to be serialized (deserialized) when sent (received) to (from) a
+process. In Python, this usually involves pickling an object, which has its
+own set of problems.</p><h2 id=threads>Threads
+<a class=heading-link href=#threads><i class="fa fa-link" aria-hidden=true title="Link to heading"></i>
+<span class=sr-only>Link to heading</span></a></h2><p>A thread is a unit of execution (a collection of instructions) within a
+process. Each process has at least one thread, called the main thread, but
+many other threads can be spawned within a process. Each thread has its own
+stack, but shares memory with other threads in the same process. Sharing of
+memory makes programming with threads inherently difficult as more threads
+can read/write from the same memory address, which can lead to race
+conditions, and can leave your program in a corrupted state. This problem is
+managed by locks and other synchronization primitives, but nothing forces a
+programmer to do that. It&rsquo;s an approach that requires discipline on the part
+of the programmer. As threads share memory, context switching is faster for
+threads than processes.</p><h2 id=multitasking-and-scheduling>Multitasking and Scheduling
+<a class=heading-link href=#multitasking-and-scheduling><i class="fa fa-link" aria-hidden=true title="Link to heading"></i>
+<span class=sr-only>Link to heading</span></a></h2><p>The CPU can only execute one set of instructions at a time on a single core.
+If you have a four core CPU, only four sets of instructions can be executed
+simultaneously. On the other hand, a modern operating system (OS) can run a
+hundred processes, to what appears, simultaneously. The OS accomplishes that by
+giving each process a slice of time on the CPU in a way that each process
+makes progress. Modern CPUs are so fast that a user cannot notice that the
+OS is actually switching continuously between processes, and that each
+process spends a relatively small amount of time on the CPU.</p><p>To do that there are basically two strategies. One is called cooperative
+multitasking, and the other preemptive multitasking. Cooperative
+multitasking means that each process, well, has to cooperate with others,
+yielding control to other processes, so that each can make progress. If a
+process misbehaves and doesn&rsquo;t yield control to other processes, the whole
+system can grind to a halt. In fact, that&rsquo;s what used to happen with older
+operating systems. They only cure was a hard reset. Fortunately, modern
+operating systems use preemptive multitasking, meaning that the OS gives a
+limited slice of CPU time to a process. If a process misbehaves and doesn&rsquo;t
+cede control willingly, the OS removes it from the CPU and gives another
+process a chance to run.</p><p>Cooperative multitasking is an excellent strategy but when employed on a
+different level, i.e. when the cooperation becomes part of the language
+implementation, like async programming in Python with coroutines or
+goroutines in the Go programming language.</p><h1 id=threads-in-python>Threads in Python
+<a class=heading-link href=#threads-in-python><i class="fa fa-link" aria-hidden=true title="Link to heading"></i>
+<span class=sr-only>Link to heading</span></a></h1><h2 id=the-global-interpreter-lock-gil>The Global Interpreter Lock (GIL)
+<a class=heading-link href=#the-global-interpreter-lock-gil><i class="fa fa-link" aria-hidden=true title="Link to heading"></i>
+<span class=sr-only>Link to heading</span></a></h2><p>Let&rsquo;s dissect that infamous term, the GIL. First, it&rsquo;s global, meaning that it
+applies to the whole Python program being executed. Second, it applies to
+the interpreter, meaning the CPython interpreter that is actually executing
+code. Finally, it&rsquo;s a lock, meaning it&rsquo;s tied to threading somehow. But what
+does the interpreter actually interpret, or execute?</p><h3 id=python-bytecode>Python Bytecode
+<a class=heading-link href=#python-bytecode><i class="fa fa-link" aria-hidden=true title="Link to heading"></i>
+<span class=sr-only>Link to heading</span></a></h3><p>The Python interpreter is actually a virtual machine that executes bytecode.
+The job of the virtual machine is to turn that bytecode into machine code
+the CPU understands. There is a neat module that allows disassembling Python
+source code, or Python objects into bytecode. Suppose we have a simple
+function that adds two arguments <code>a</code> and <code>b</code></p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span><span style=color:#66d9ef>def</span> <span style=color:#a6e22e>add</span>(a, b):
+</span></span><span style=display:flex><span>    result <span style=color:#f92672>=</span> a <span style=color:#f92672>+</span> b
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> result
+</span></span></code></pre></div><p>We can see the generated bytecode of that function in human-readable form by
+using the <code>dis.dis</code>function</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-shell data-lang=shell><span style=display:flex><span>&gt;&gt;&gt; import dis
+</span></span><span style=display:flex><span>&gt;&gt;&gt; dis.dis<span style=color:#f92672>(</span>add<span style=color:#f92672>)</span>
+</span></span><span style=display:flex><span>  <span style=color:#ae81ff>1</span>           <span style=color:#ae81ff>0</span> RESUME                   <span style=color:#ae81ff>0</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>  <span style=color:#ae81ff>2</span>           <span style=color:#ae81ff>2</span> LOAD_FAST                <span style=color:#ae81ff>0</span> <span style=color:#f92672>(</span>a<span style=color:#f92672>)</span>
+</span></span><span style=display:flex><span>              <span style=color:#ae81ff>4</span> LOAD_FAST                <span style=color:#ae81ff>1</span> <span style=color:#f92672>(</span>b<span style=color:#f92672>)</span>
+</span></span><span style=display:flex><span>              <span style=color:#ae81ff>6</span> BINARY_OP                <span style=color:#ae81ff>0</span> <span style=color:#f92672>(</span>+<span style=color:#f92672>)</span>
+</span></span><span style=display:flex><span>             <span style=color:#ae81ff>10</span> STORE_FAST               <span style=color:#ae81ff>2</span> <span style=color:#f92672>(</span>result<span style=color:#f92672>)</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>  <span style=color:#ae81ff>3</span>          <span style=color:#ae81ff>12</span> LOAD_FAST                <span style=color:#ae81ff>2</span> <span style=color:#f92672>(</span>result<span style=color:#f92672>)</span>
+</span></span><span style=display:flex><span>             <span style=color:#ae81ff>14</span> RETURN_VALUE
+</span></span></code></pre></div><p>The execution of bytecode by the Python virtual machine, or interpreter, is
+single threaded, meaning only one thread within the Python process can
+execute bytecode, while other threads can simply wait their turn. If you
+wanted to execute our <code>add</code> function in two threads, here would be one
+possible execution flow:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-text data-lang=text><span style=display:flex><span>thread | bytecode
+</span></span><span style=display:flex><span>1      | RESUME
+</span></span><span style=display:flex><span>1      | LOAD_FAST  (a)
+</span></span><span style=display:flex><span>1      | LOAD_FAST  (b)
+</span></span><span style=display:flex><span>1      | BINARY_OP  (+)
+</span></span><span style=display:flex><span>1      | STORE_FAST (result)
+</span></span><span style=display:flex><span># context switch
+</span></span><span style=display:flex><span>2      | RESUME
+</span></span><span style=display:flex><span>2      | LOAD_FAST  (a)
+</span></span><span style=display:flex><span>2      | LOAD_FAST  (b)
+</span></span><span style=display:flex><span>2      | BINARY_OP  (+)
+</span></span><span style=display:flex><span># context switch
+</span></span><span style=display:flex><span>1      | LOAD_FAST  (result)
+</span></span><span style=display:flex><span>1      | RETURN_VALUE
+</span></span><span style=display:flex><span># thread 1 is complete
+</span></span><span style=display:flex><span>2      | STORE_FAST (result)
+</span></span><span style=display:flex><span>2      | LOAD_FAST  (result)
+</span></span><span style=display:flex><span>2      | RETURN_VALUE
+</span></span><span style=display:flex><span># thread 2 is complete
+</span></span></code></pre></div><p>If you&rsquo;re wondering why does Python have the GIL in the first place, it
+makes the C implementation of the interpreter, reference counting, garbage
+collection and many other aspects simpler.</p><h3 id=io-bound-vs-cpu-bound-problems>I/O Bound vs CPU Bound Problems
+<a class=heading-link href=#io-bound-vs-cpu-bound-problems><i class="fa fa-link" aria-hidden=true title="Link to heading"></i>
+<span class=sr-only>Link to heading</span></a></h3><p>The above example illustrates that Python threads are useful for cooperative
+multitasking, which usually involves I/O bound problems. I/O bound problems
+have to do with a lot of waiting (waiting means that the CPU does a lot of
+cycles without executing any of our code), like waiting for a server
+response using <code>requests.get</code> or <code>httpx.get</code>, waiting for a socket, or
+simply waiting for <code>time.sleep(1)</code> to elapse.</p><p>CPU bound problems, on the other hand, keep the CPU busy, and such threads
+cooperate poorly with others as each thread wants to keep the CPU as busy as
+possible. An example of CPU bound problems would be anything computationally
+heavy, like multiplying matrices or calculating prime numbers.</p><p>If your problem is CPU bound, multiprocessing would be a better solution. In
+fact, trying to solve a CPU bound problem with threads in Python would be
+slower than a single threaded solution because of the context switch
+overhead. If, on the other hand, your threads do nothing most of the time,
+meaning they are simply waiting for some resource, multithreading is a good
+approach.</p><p>Now that we have some theory under our belt, let&rsquo;s move on to some examples.</p><h2 id=producer-consumer-problem>Producer Consumer Problem
+<a class=heading-link href=#producer-consumer-problem><i class="fa fa-link" aria-hidden=true title="Link to heading"></i>
+<span class=sr-only>Link to heading</span></a></h2><p>A common problem solved by threads involves one thread producing some data,
+and another consuming or processing that data. Here is an example</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span><span style=color:#f92672>import</span> queue
+</span></span><span style=display:flex><span><span style=color:#f92672>import</span> threading
+</span></span><span style=display:flex><span><span style=color:#f92672>import</span> time
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>q <span style=color:#f92672>=</span> queue<span style=color:#f92672>.</span>Queue()
+</span></span><span style=display:flex><span>poison_pill <span style=color:#f92672>=</span> object()
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>def</span> <span style=color:#a6e22e>producer</span>():
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>for</span> i <span style=color:#f92672>in</span> range(<span style=color:#ae81ff>10</span>):
+</span></span><span style=display:flex><span>        print(<span style=color:#e6db74>&#39;producing&#39;</span>, i)
+</span></span><span style=display:flex><span>        q<span style=color:#f92672>.</span>put(i)
+</span></span><span style=display:flex><span>        time<span style=color:#f92672>.</span>sleep(<span style=color:#ae81ff>1</span>)
+</span></span><span style=display:flex><span>    print(<span style=color:#e6db74>&#39;producer done&#39;</span>)
+</span></span><span style=display:flex><span>    q<span style=color:#f92672>.</span>put(poison_pill)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>def</span> <span style=color:#a6e22e>consumer</span>():
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>while</span> <span style=color:#66d9ef>True</span>:
+</span></span><span style=display:flex><span>        item <span style=color:#f92672>=</span> q<span style=color:#f92672>.</span>get()
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>if</span> item <span style=color:#f92672>is</span> poison_pill:
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>break</span>
+</span></span><span style=display:flex><span>        print(<span style=color:#e6db74>&#39;consuming&#39;</span>, item)
+</span></span><span style=display:flex><span>    print(<span style=color:#e6db74>&#39;consumer done&#39;</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>t1 <span style=color:#f92672>=</span> threading<span style=color:#f92672>.</span>Thread(target<span style=color:#f92672>=</span>producer)
+</span></span><span style=display:flex><span>t2 <span style=color:#f92672>=</span> threading<span style=color:#f92672>.</span>Thread(target<span style=color:#f92672>=</span>consumer)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>t1<span style=color:#f92672>.</span>start()
+</span></span><span style=display:flex><span>t2<span style=color:#f92672>.</span>start()
+</span></span></code></pre></div><p>There are a couple of things to note here. First, the producer thread sleeps
+a lot, and the consumer thread does some lightweight processing, so our
+problem is I/O bound, which means threads are a good approach. Second, since
+two threads are reading and writing from/to the same data structure, those
+operations need to be thread-safe. The <code>queue</code> module is designed with
+exactly that in mind. However, be aware that not all methods on the
+<code>queue. Queue</code> object are thread-safe. Second, the <code>q.get()</code> blocks if there
+are no items in the queue. This can leave the consumer thread hanging in
+that blocking call if the producer thread is done. To avoid that, it is
+common to send a so-called poison pill item to signal to the consumer thread
+that it should stop processing data.</p><h2 id=token-bucket>Token Bucket
+<a class=heading-link href=#token-bucket><i class="fa fa-link" aria-hidden=true title="Link to heading"></i>
+<span class=sr-only>Link to heading</span></a></h2><p>Suppose you have a web server, or some other resource the usage of which you
+want to limit. One strategy you might want to employ is a token bucket. A
+token bucket holds a limited number of tokens that are being refilled at
+regular intervals. Each access to a limited resource consumes a token. If
+all tokens have been consumed, the resource is unavailable until refilled
+with tokens again. Here is one possible implementation of a token bucket.</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span><span style=color:#f92672>import</span> logging
+</span></span><span style=display:flex><span><span style=color:#f92672>import</span> queue
+</span></span><span style=display:flex><span><span style=color:#f92672>import</span> threading
+</span></span><span style=display:flex><span><span style=color:#f92672>import</span> time
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>logging<span style=color:#f92672>.</span>basicConfig(
+</span></span><span style=display:flex><span>    format<span style=color:#f92672>=</span><span style=color:#e6db74>&#39;[</span><span style=color:#e6db74>%(levelname)s</span><span style=color:#e6db74> </span><span style=color:#e6db74>%(asctime)s</span><span style=color:#e6db74> </span><span style=color:#e6db74>%(threadName)s</span><span style=color:#e6db74>]: </span><span style=color:#e6db74>%(message)s</span><span style=color:#e6db74>&#39;</span>
+</span></span><span style=display:flex><span>)
+</span></span><span style=display:flex><span>logging<span style=color:#f92672>.</span>getLogger()<span style=color:#f92672>.</span>setLevel(logging<span style=color:#f92672>.</span>INFO)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>_token <span style=color:#f92672>=</span> object()
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>class</span> <span style=color:#a6e22e>TokenBucket</span>:
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>def</span> __init__(
+</span></span><span style=display:flex><span>        self,
+</span></span><span style=display:flex><span>        refill_period: float,
+</span></span><span style=display:flex><span>        refill_tokens: int,
+</span></span><span style=display:flex><span>        max_tokens: int,
+</span></span><span style=display:flex><span>    ):
+</span></span><span style=display:flex><span>        self<span style=color:#f92672>.</span>_refill_period <span style=color:#f92672>=</span> refill_period
+</span></span><span style=display:flex><span>        self<span style=color:#f92672>.</span>_refill_tokens <span style=color:#f92672>=</span> refill_tokens
+</span></span><span style=display:flex><span>        self<span style=color:#f92672>.</span>_bucket <span style=color:#f92672>=</span> queue<span style=color:#f92672>.</span>Queue(maxsize<span style=color:#f92672>=</span>max_tokens)
+</span></span><span style=display:flex><span>        self<span style=color:#f92672>.</span>_refill_thread <span style=color:#f92672>=</span> threading<span style=color:#f92672>.</span>Thread(
+</span></span><span style=display:flex><span>            target<span style=color:#f92672>=</span>self<span style=color:#f92672>.</span>_refill_target, name<span style=color:#f92672>=</span><span style=color:#e6db74>&#39;RefillThread&#39;</span>
+</span></span><span style=display:flex><span>        )
+</span></span><span style=display:flex><span>        self<span style=color:#f92672>.</span>_stop_event <span style=color:#f92672>=</span> threading<span style=color:#f92672>.</span>Event()
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>def</span> <span style=color:#a6e22e>start</span>(self):
+</span></span><span style=display:flex><span>        logging<span style=color:#f92672>.</span>info(<span style=color:#e6db74>&#39;Starting refill thread.&#39;</span>)
+</span></span><span style=display:flex><span>        self<span style=color:#f92672>.</span>_refill_thread<span style=color:#f92672>.</span>start()
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>def</span> <span style=color:#a6e22e>stop</span>(self):
+</span></span><span style=display:flex><span>        logging<span style=color:#f92672>.</span>info(<span style=color:#e6db74>&#39;Setting stop event to true.&#39;</span>)
+</span></span><span style=display:flex><span>        self<span style=color:#f92672>.</span>_stop_event<span style=color:#f92672>.</span>set()
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>def</span> <span style=color:#a6e22e>request</span>(self):
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>try</span>:
+</span></span><span style=display:flex><span>            self<span style=color:#f92672>.</span>_bucket<span style=color:#f92672>.</span>get(block<span style=color:#f92672>=</span><span style=color:#66d9ef>False</span>)
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>except</span> queue<span style=color:#f92672>.</span>Empty:
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>return</span> <span style=color:#e6db74>&#39;denied&#39;</span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>else</span>:
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>return</span> <span style=color:#e6db74>&#39;success&#39;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>def</span> <span style=color:#a6e22e>_refill_target</span>(self):
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>while</span> <span style=color:#66d9ef>True</span>:
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>if</span> self<span style=color:#f92672>.</span>_stop_event<span style=color:#f92672>.</span>is_set():
+</span></span><span style=display:flex><span>                logging<span style=color:#f92672>.</span>info(<span style=color:#e6db74>&#39;Stopping refill thread.&#39;</span>)
+</span></span><span style=display:flex><span>                <span style=color:#66d9ef>break</span>
+</span></span><span style=display:flex><span>            logging<span style=color:#f92672>.</span>info(<span style=color:#e6db74>f</span><span style=color:#e6db74>&#39;Refilling bucket with </span><span style=color:#e6db74>{</span>self<span style=color:#f92672>.</span>_refill_tokens<span style=color:#e6db74>}</span><span style=color:#e6db74> tokens.&#39;</span>)
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>for</span> _ <span style=color:#f92672>in</span> range(self<span style=color:#f92672>.</span>_refill_tokens):
+</span></span><span style=display:flex><span>                <span style=color:#66d9ef>try</span>:
+</span></span><span style=display:flex><span>                    self<span style=color:#f92672>.</span>_bucket<span style=color:#f92672>.</span>put(_token)
+</span></span><span style=display:flex><span>                <span style=color:#66d9ef>except</span> queue<span style=color:#f92672>.</span>Full:
+</span></span><span style=display:flex><span>                    <span style=color:#66d9ef>break</span>
+</span></span><span style=display:flex><span>            time<span style=color:#f92672>.</span>sleep(self<span style=color:#f92672>.</span>_refill_period)
+</span></span><span style=display:flex><span>        logging<span style=color:#f92672>.</span>info(<span style=color:#e6db74>&#39;Refill thread completed.&#39;</span>)
+</span></span></code></pre></div><p>You can test out the above example in the Python console like this</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-shell data-lang=shell><span style=display:flex><span>&gt;&gt;&gt; tb <span style=color:#f92672>=</span> TokenBucket<span style=color:#f92672>(</span>10, 2, 5<span style=color:#f92672>)</span>
+</span></span><span style=display:flex><span>&gt;&gt;&gt; tb.start<span style=color:#f92672>()</span>
+</span></span></code></pre></div><p>Now call <code>tb.request()</code> repeatedly and observe what happens. If you try to
+exit the Python interpreter while <code>TokenBucket</code> is still running, you might
+be surprised that the interpreter hangs. That&rsquo;s because the <code>refill</code> thread
+was not stopped. If you do call <code>tb.stop()</code>, the <code>refill</code> thread will exit
+cleanly, but only because we implemented a mechanism for clean termination.</p><p>In other words, if you haven&rsquo;t set up a mechanism so that a thread can exit
+cleanly, there is nothing you can do to stop it except terminating the whole
+Python process.</p><p>Another somewhat surprising aspect of programming with threads is the impact
+of unhandled exceptions one thread has on another. The surprise is that
+there is no impact. If one thread fails with an unhandled exception, other
+threads will proceed as if nothing happened. Although threads share memory,
+each has its own stack and isn&rsquo;t interested in what is happening with
+other threads.</p><p>Now that we have seen a concrete example involving threads, let&rsquo;s explore
+how Python behaves under various types of load.</p><h1 id=impact-of-the-gil>Impact of the GIL
+<a class=heading-link href=#impact-of-the-gil><i class="fa fa-link" aria-hidden=true title="Link to heading"></i>
+<span class=sr-only>Link to heading</span></a></h1><p>I mentioned earlier that there are two types of problems in Python regarding
+CPU load; I/O bound and CPU bound. Here is an example of such functions</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span><span style=color:#f92672>import</span> time
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>def</span> <span style=color:#a6e22e>io_bound</span>(name: str, iterations: int, sleep: float):
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>for</span> i <span style=color:#f92672>in</span> range(<span style=color:#ae81ff>1</span>, iterations <span style=color:#f92672>+</span> <span style=color:#ae81ff>1</span>):
+</span></span><span style=display:flex><span>        print(<span style=color:#e6db74>f</span><span style=color:#e6db74>&#39;[io-bound-</span><span style=color:#e6db74>{</span>name<span style=color:#e6db74>}</span><span style=color:#e6db74>] </span><span style=color:#e6db74>{</span>i<span style=color:#e6db74>}</span><span style=color:#e6db74>/</span><span style=color:#e6db74>{</span>iterations<span style=color:#e6db74>}</span><span style=color:#e6db74>&#39;</span>)
+</span></span><span style=display:flex><span>        time<span style=color:#f92672>.</span>sleep(sleep)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>def</span> <span style=color:#a6e22e>cpu_bound</span>(name: str, iterations: int):
+</span></span><span style=display:flex><span>    delta <span style=color:#f92672>=</span> round(iterations <span style=color:#f92672>/</span> <span style=color:#ae81ff>100</span>)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>for</span> i <span style=color:#f92672>in</span> range(<span style=color:#ae81ff>1</span>, iterations <span style=color:#f92672>+</span> <span style=color:#ae81ff>1</span>):
+</span></span><span style=display:flex><span>        q, r <span style=color:#f92672>=</span> divmod(i, delta)
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>if</span> r <span style=color:#f92672>==</span> <span style=color:#ae81ff>0</span>:
+</span></span><span style=display:flex><span>            print(<span style=color:#e6db74>f</span><span style=color:#e6db74>&#39;[cpu-bound-</span><span style=color:#e6db74>{</span>name<span style=color:#e6db74>}</span><span style=color:#e6db74>] </span><span style=color:#e6db74>{</span>q<span style=color:#e6db74>}</span><span style=color:#e6db74>/100&#39;</span>)
+</span></span></code></pre></div><h2 id=io-bound-problems-in-multiple-threads>I/O Bound Problems in Multiple Threads
+<a class=heading-link href=#io-bound-problems-in-multiple-threads><i class="fa fa-link" aria-hidden=true title="Link to heading"></i>
+<span class=sr-only>Link to heading</span></a></h2><p>First, let&rsquo;s take a look at the performance impact of running <code>io_bound</code> in
+multiple threads. For our baseline, we will run the <code>io_bound</code> function in
+the main thread and measure its performance with <code>time.perf_counter</code>.</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span>t1 <span style=color:#f92672>=</span> time<span style=color:#f92672>.</span>perf_counter()
+</span></span><span style=display:flex><span>io_bound(<span style=color:#e6db74>&#39;1&#39;</span>, <span style=color:#ae81ff>20</span>, <span style=color:#ae81ff>1</span>)
+</span></span><span style=display:flex><span>t2 <span style=color:#f92672>=</span> time<span style=color:#f92672>.</span>perf_counter()
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>print(<span style=color:#e6db74>f</span><span style=color:#e6db74>&#39;elapsed: </span><span style=color:#e6db74>{</span>t2 <span style=color:#f92672>-</span> t1<span style=color:#e6db74>}</span><span style=color:#e6db74>&#39;</span>)
+</span></span></code></pre></div><p>On my machine, this gives <code>20.016027782010497</code> seconds. Nothing unexpected
+here. Let&rsquo;s give it a try with several threads running the <code>io_bound</code> function.</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span>num_threads <span style=color:#f92672>=</span> <span style=color:#ae81ff>20</span>
+</span></span><span style=display:flex><span>io_bound_threads <span style=color:#f92672>=</span> [
+</span></span><span style=display:flex><span>    threading<span style=color:#f92672>.</span>Thread(target<span style=color:#f92672>=</span>io_bound, args<span style=color:#f92672>=</span>(str(i), <span style=color:#ae81ff>20</span>, <span style=color:#ae81ff>1</span>))
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>for</span> i <span style=color:#f92672>in</span> range(<span style=color:#ae81ff>1</span>, num_threads <span style=color:#f92672>+</span> <span style=color:#ae81ff>1</span>)
+</span></span><span style=display:flex><span>]
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>t1 <span style=color:#f92672>=</span> time<span style=color:#f92672>.</span>perf_counter()
+</span></span><span style=display:flex><span><span style=color:#66d9ef>for</span> thread <span style=color:#f92672>in</span> io_bound_threads:
+</span></span><span style=display:flex><span>    thread<span style=color:#f92672>.</span>start()
+</span></span><span style=display:flex><span><span style=color:#66d9ef>for</span> thread <span style=color:#f92672>in</span> io_bound_threads:
+</span></span><span style=display:flex><span>    thread<span style=color:#f92672>.</span>join()
+</span></span><span style=display:flex><span>t2 <span style=color:#f92672>=</span> time<span style=color:#f92672>.</span>perf_counter()
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>print(<span style=color:#e6db74>f</span><span style=color:#e6db74>&#39;elapsed for </span><span style=color:#e6db74>{</span>num_threads<span style=color:#e6db74>}</span><span style=color:#e6db74> threads: </span><span style=color:#e6db74>{</span>t2 <span style=color:#f92672>-</span> t1<span style=color:#e6db74>}</span><span style=color:#e6db74>&#39;</span>)
+</span></span></code></pre></div><p>The <code>thread.join()</code> statement means that the main thread, i.e. the thread
+which starts all other threads will wait until each thread completes before
+evaluating the <code>t2</code> time. For the <code>io_bound</code>function running in 20 threads,
+the total elapsed time was <code>20.035348607998458</code>. When threads cooperate, as
+they do in this example, multithreading is a great approach for solving
+concurrent problems. Here, each thread does a little work, and releases the
+GIL (<code>time.sleep</code> releases the GIL, as do many other system calls) so that
+some other thread can proceed.</p><h2 id=cpu-bound-problems-in-multiple-threads>CPU Bound Problems in Multiple Threads
+<a class=heading-link href=#cpu-bound-problems-in-multiple-threads><i class="fa fa-link" aria-hidden=true title="Link to heading"></i>
+<span class=sr-only>Link to heading</span></a></h2><p>As in the previous section, we first create a baseline for <code>cpu_bound</code>, i.e.
+we run in it in a single thread and measure its performance with <code>time. perf_counter</code>.</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span>t1 <span style=color:#f92672>=</span> time<span style=color:#f92672>.</span>perf_counter()
+</span></span><span style=display:flex><span>cpu_bound(<span style=color:#e6db74>&#39;1&#39;</span>, <span style=color:#ae81ff>250_000_000</span>)
+</span></span><span style=display:flex><span>t2 <span style=color:#f92672>=</span> time<span style=color:#f92672>.</span>perf_counter()
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>print(<span style=color:#e6db74>f</span><span style=color:#e6db74>&#39;elapsed: </span><span style=color:#e6db74>{</span>t2 <span style=color:#f92672>-</span> t1<span style=color:#e6db74>}</span><span style=color:#e6db74>&#39;</span>)
+</span></span></code></pre></div><p>On my machine this gives the elapsed time of <code>23.196625341000072</code> seconds.
+This is our baseline for a CPU bound problem running in a single thread.</p><p>What about running the <code>cpu_bound</code> function in just two threads?</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span>num_threads <span style=color:#f92672>=</span> <span style=color:#ae81ff>2</span>
+</span></span><span style=display:flex><span>cpu_bound_threads <span style=color:#f92672>=</span> [
+</span></span><span style=display:flex><span>    threading<span style=color:#f92672>.</span>Thread(target<span style=color:#f92672>=</span>cpu_bound, args<span style=color:#f92672>=</span>(str(i), <span style=color:#ae81ff>250_000_000</span>))
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>for</span> i <span style=color:#f92672>in</span> range(<span style=color:#ae81ff>1</span>, num_threads <span style=color:#f92672>+</span> <span style=color:#ae81ff>1</span>)
+</span></span><span style=display:flex><span>]
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>t1 <span style=color:#f92672>=</span> time<span style=color:#f92672>.</span>perf_counter()
+</span></span><span style=display:flex><span><span style=color:#66d9ef>for</span> thread <span style=color:#f92672>in</span> cpu_bound_threads:
+</span></span><span style=display:flex><span>    thread<span style=color:#f92672>.</span>start()
+</span></span><span style=display:flex><span><span style=color:#66d9ef>for</span> thread <span style=color:#f92672>in</span> cpu_bound_threads:
+</span></span><span style=display:flex><span>    thread<span style=color:#f92672>.</span>join()
+</span></span><span style=display:flex><span>t2 <span style=color:#f92672>=</span> time<span style=color:#f92672>.</span>perf_counter()
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>print(<span style=color:#e6db74>f</span><span style=color:#e6db74>&#39;elapsed for </span><span style=color:#e6db74>{</span>num_threads<span style=color:#e6db74>}</span><span style=color:#e6db74> threads: </span><span style=color:#e6db74>{</span>t2 <span style=color:#f92672>-</span> t1<span style=color:#e6db74>}</span><span style=color:#e6db74>&#39;</span>)
+</span></span></code></pre></div><p>The running time for a CPU bound problem running in two threads is
+<code>47.14984970400019</code>. This is about double running time of <code>cpu_bound</code>
+in a single thread. Since we know that the Python interpreter can only
+execute code in a single thread, this is expected. The surprising part is
+that, although the <code>cpu_bound</code> function isn&rsquo;t written for cooperative
+multitasking, meaning there are no places in the code where the GIL is
+released, both threads make progress. How? The answer lies in the <code>sys</code>
+module, in two functions</p><ul><li><code>sys.getswitchinterval()</code></li><li><code>sys.setswitchinterval(interval)</code></li></ul><p>The first function displays the interpreter&rsquo;s currently set thread switch
+interval, i.e. the interval each thread is given before being interrupted so
+that another thread has a chance to run even though it can be CPU bound.
+That&rsquo;s why we were able to run two <code>cpu_bound</code> functions concurrently in a
+way that each made progress. The cool thing about this is that we can set
+that interval. Doing so will give us a better understanding of the impact
+performance switching has on execution time. The numbers are displayed in
+the table below, but your millage may vary depending on your system.</p><table><thead><tr><th>Switch interval</th><th>Elapsed time for cpu_bound in two threads</th></tr></thead><tbody><tr><td>5 milliseconds</td><td>47.14984970400019</td></tr><tr><td>500 microseconds</td><td>49.7365762139998</td></tr><tr><td>50 microseconds</td><td>51.83233763200042</td></tr><tr><td>5 microseconds</td><td>55.84771065300083</td></tr><tr><td>1 microsecond</td><td>57.08213459699982</td></tr></tbody></table><p>These number make sense because as the switching interval decreases, Python
+spends more time switching context, so the overall execution time increases.
+Another interesting thing would be setting the switch interval to some large
+number for the CPU, say 1 second. On my machine, in that case, one thread
+finishes before the other can make it half way. In the extreme case, the
+second thread wouldn&rsquo;t even start before the first had finished.</p><h2 id=mixing-cpu-bound-and-io-bound-problems>Mixing CPU Bound and I/O Bound Problems
+<a class=heading-link href=#mixing-cpu-bound-and-io-bound-problems><i class="fa fa-link" aria-hidden=true title="Link to heading"></i>
+<span class=sr-only>Link to heading</span></a></h2><p>For the final experiment we will have one <code>cpu_bound</code> thread and twenty
+<code>io_bound</code> threads.</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span>io_bound_threads <span style=color:#f92672>=</span> [
+</span></span><span style=display:flex><span>    threading<span style=color:#f92672>.</span>Thread(target<span style=color:#f92672>=</span>io_bound, args<span style=color:#f92672>=</span>(str(i), <span style=color:#ae81ff>20</span>, <span style=color:#ae81ff>1</span>))
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>for</span> i <span style=color:#f92672>in</span> range(<span style=color:#ae81ff>1</span>, <span style=color:#ae81ff>21</span>)
+</span></span><span style=display:flex><span>]
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>cpu_bound_threads <span style=color:#f92672>=</span> [
+</span></span><span style=display:flex><span>    threading<span style=color:#f92672>.</span>Thread(target<span style=color:#f92672>=</span>cpu_bound, args<span style=color:#f92672>=</span>(str(<span style=color:#ae81ff>1</span>), <span style=color:#ae81ff>250_000_000</span>))
+</span></span><span style=display:flex><span>]
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>threads <span style=color:#f92672>=</span> io_bound_threads <span style=color:#f92672>+</span> cpu_bound_threads
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>t1 <span style=color:#f92672>=</span> time<span style=color:#f92672>.</span>perf_counter()
+</span></span><span style=display:flex><span><span style=color:#66d9ef>for</span> thread <span style=color:#f92672>in</span> threads:
+</span></span><span style=display:flex><span>    thread<span style=color:#f92672>.</span>start()
+</span></span><span style=display:flex><span><span style=color:#66d9ef>for</span> thread <span style=color:#f92672>in</span> threads:
+</span></span><span style=display:flex><span>    thread<span style=color:#f92672>.</span>join()
+</span></span><span style=display:flex><span>t2 <span style=color:#f92672>=</span> time<span style=color:#f92672>.</span>perf_counter()
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>print(<span style=color:#e6db74>f</span><span style=color:#e6db74>&#39;elapsed for </span><span style=color:#e6db74>{</span>len(threads)<span style=color:#e6db74>}</span><span style=color:#e6db74> threads: </span><span style=color:#e6db74>{</span>t2 <span style=color:#f92672>-</span> t1<span style=color:#e6db74>}</span><span style=color:#e6db74>&#39;</span>)
+</span></span></code></pre></div><p>The total time for one CPU bound thread and twenty I/O bound threads is
+<code>24.7099137109999</code>, which is pretty neat. It means that you can run one
+intensive CPU task and many I/O bound tasks without those tasks suffering
+much in performance.</p><h1 id=conclusion>Conclusion
+<a class=heading-link href=#conclusion><i class="fa fa-link" aria-hidden=true title="Link to heading"></i>
+<span class=sr-only>Link to heading</span></a></h1><p>Maybe with the current plan of removing the GIL, such considerations will
+no longer apply. Until and if that happens, the GIL is here to stay and
+understanding its impact is important if you have to write concurrent code.
+To reiterate once more, if your problem is I/O bound, multithreading is a
+good approach. If your problem is CPU bound, multiprocessing is the way to
+go with one caveat. Spawn as many processes as there are available cores.</p></article></section></div><footer class=footer><section class=container>©
+2023
+Ivan Jedovnicki
+·
+Powered by <a href=https://gohugo.io/ target=_blank rel=noopener>Hugo</a> & <a href=https://github.com/luizdepra/hugo-coder/ target=_blank rel=noopener>Coder</a>.</section></footer></main><script src=/js/coder.min.6ae284be93d2d19dad1f02b0039508d9aab3180a12a06dcc71b0b0ef7825a317.js integrity="sha256-auKEvpPS0Z2tHwKwA5UI2aqzGAoSoG3McbCw73gloxc="></script></body></html>
